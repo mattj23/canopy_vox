@@ -16,7 +16,7 @@
 #include <string>
 #include <sstream>
 
-struct Vector3d
+class Vector3d
 {
 public:
     double x;
@@ -40,12 +40,12 @@ public:
     Vector3d operator+(const Vector3d& other) const;
     Vector3d operator-(const Vector3d& other) const;
     Vector3d operator*(const double& scale) const;
+    bool operator==(const Vector3d& other) const;
 
     // Text
     std::string Text(void);
 };
 
-bool IsOnSegment(Vector3d start, Vector3d end, Vector3d test);
 double AngleBetweenVectors(Vector3d v0, Vector3d v1);   // Generalized 3d case
 
 

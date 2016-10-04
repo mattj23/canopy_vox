@@ -34,6 +34,11 @@ Vector3d::Vector3d(double x_, double y_, double z_)
 	z = z_;
 }
 
+bool Vector3d::operator==(const Vector3d& other) const
+{
+	return this->DistanceTo(other) < ZERO_TOL;
+}
+
 // Vector addition operator [unit test in VectorOperators()]
 Vector3d Vector3d::operator+(const Vector3d& other) const
 {
@@ -112,7 +117,7 @@ Vector3d Vector3d::Unit() const
 
 double Vector3d::AngleTo(const Vector3d& other) const
 {
-	return AngleBetweenVectors(&this, other);
+	return AngleBetweenVectors(*this, other);
 }
 
 // Returns a string with the x, y, and z components of the vector assembled in a
@@ -129,19 +134,4 @@ std::string Vector3d::Text()
 double AngleBetweenVectors(Vector3d v0, Vector3d v1)
 {
 	return acos(v0.Dot(v1) / (v0.Length() * v1.Length()));
-}
-
-// Checks if a test point is on the segment start->end [unit test in CheckIsOnSegment()]
-bool IsOnSegment(Vector3d start, Vector3d end, Vector3d test)
-{
-	Vector3d p = ProjectOntoSegment(start, end, test);
-	if (test.DistanceTo(p) > ZERO_TOL)
-		return false;
-	double segmentLength = start.DistanceTo(end);
-	double d1 = start.DistanceTo(p);
-	double d2 = end.DistanceTo(p);
-
-	if (d1 > segmentLength || d2 > segmentLength)
-		return false;
-	return true;
 }
