@@ -32,6 +32,7 @@ Copyright (C) 2016   Matthew Jarvis
 #define VOXELSORTER_H
 
 #include "vector3d.h"
+#include <iostream>
 
 struct VoxelAddress
 {
@@ -42,6 +43,8 @@ struct VoxelAddress
     VoxelAddress();
     VoxelAddress(const int _i, const int _j, const int _k);
 };
+
+::std::ostream& operator<<(::std::ostream& os, const VoxelAddress& a);
 
 inline bool operator==(const VoxelAddress& lhs, const VoxelAddress& rhs) {return lhs.i == rhs.i && lhs.j == rhs.j && lhs.k == rhs.k;}
 inline bool operator!=(const VoxelAddress& lhs, const VoxelAddress& rhs) {return !operator==(lhs, rhs);}

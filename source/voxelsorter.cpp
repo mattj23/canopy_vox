@@ -29,6 +29,8 @@ Copyright (C) 2016   Matthew Jarvis
 */
 
 #include "voxelsorter.h"
+#include <iostream>
+#include <cmath>
 
 VoxelAddress::VoxelAddress(const int _i, const int _j, const int _k)
 {
@@ -42,6 +44,11 @@ VoxelAddress::VoxelAddress()
     i = 0;
     j = 0;
     k = 0;
+}
+
+::std::ostream& operator<<(::std::ostream& os, const VoxelAddress& a)
+{
+    return os << "VoxelAddress(" << a.i << ", " << a.j << ", " << a.k << ")";
 }
 
 LocatedPoint::LocatedPoint(const Vector3d& p, const VoxelAddress& a)
@@ -62,5 +69,9 @@ VoxelSorter::VoxelSorter(double di, double dj, double dk, double i0, double j0, 
 
 LocatedPoint VoxelSorter::identifyPoint(const Vector3d& point) const
 {
-    return LocatedPoint(Vector3d(), VoxelAddress(0,0,0));
+    int i_ = static_cast<int>(std::floor((point.x - izero) / ispan));
+    int j_ = static_cast<int>(std::floor((point.y - jzero) / jspan));
+    int k_ = static_cast<int>(std::floor((point.z - kzero) / kspan));
+
+    return LocatedPoint(point, VoxelAddress(i_, j_, k_));
 }
