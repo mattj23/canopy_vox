@@ -1,7 +1,15 @@
 CC=g++
-CFLAGS=-O3 -std=gnu++11
+CFLAGS=-O2 -std=gnu++11
 LTESTFLAGS= -lgtest -lpthread
+BIN=./bin/
+SRC=./source/
 
 # g++ test_vector3d.cpp vector3d.cpp -o bin/gtest --std=gnu++11 -lgtest -lpthread
-vector_tests: vector3d.cpp test_vector3d.cpp vector3d.h
-	$(CC) vector3d.cpp test_vector3d.cpp -o bin/vector_tests $(CFLAGS) $(LTESTFLAGS)
+vector_tests: $(BIN)vector3d.o $(SRC)test_vector3d.cpp
+	$(CC) $(SRC)test_vector3d.cpp $(BIN)vector3d.o -o $(BIN)vector_tests $(CFLAGS) $(LTESTFLAGS)
+
+$(BIN)vector3d.o: $(SRC)vector3d.cpp $(SRC)vector3d.h
+	$(CC) $(SRC)vector3d.cpp -c -o $(BIN)vector3d.o $(CFLAGS)
+
+clean:
+	\rm $(BIN)*
