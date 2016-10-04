@@ -4,11 +4,14 @@ LTESTFLAGS= -lgtest -lpthread # Link flags for Google Testing Framework
 BIN=./bin/
 SRC=./source/
 
-naive_voxels: $(SRC)naive_voxels.cpp $(BIN)vector3d.o $(BIN)utilities.o
-	$(CC) $(SRC)naive_voxels.cpp $(BIN)vector3d.o $(BIN)utilities.o -o $(BIN)naive_voxels $(CFLAGS)
+naive_voxels: $(SRC)naive_voxels.cpp $(BIN)vector3d.o $(BIN)utilities.o $(BIN)jsoncpp.o $(BIN)voxelsorter.o
+	$(CC) $(SRC)naive_voxels.cpp $(BIN)vector3d.o $(BIN)utilities.o $(BIN)jsoncpp.o $(BIN)voxelsorter.o -o $(BIN)naive_voxels $(CFLAGS)
 
-$(BIN)utilities.o: $(SRC)utilities.cpp $(SRC)utilities.h $(BIN)vector3d.o
-	$(CC) $(SRC)utilities.cpp $(BIN)vector3d.o -c -o $(BIN)utilities.o $(CFLAGS)
+$(BIN)utilities.o: $(SRC)utilities.cpp $(SRC)utilities.h $(BIN)vector3d.o $(BIN)jsoncpp.o
+	$(CC) $(SRC)utilities.cpp $(BIN)vector3d.o $(BIN)jsoncpp.o -c -o $(BIN)utilities.o $(CFLAGS)
+
+$(BIN)jsoncpp.o: $(SRC)jsoncpp.cpp # $(SRC)json/json.h
+	$(CC) $(SRC)jsoncpp.cpp -c -o $(BIN)jsoncpp.o $(CFLAGS)
 
 $(BIN)voxel_tests: $(BIN)voxelsorter.o $(SRC)test_voxelsorter.cpp $(BIN)vector3d.o
 	$(CC) $(SRC)test_voxelsorter.cpp $(BIN)voxelsorter.o $(BIN)vector3d.o -o $(BIN)voxel_tests $(CFLAGS) $(LTESTFLAGS)

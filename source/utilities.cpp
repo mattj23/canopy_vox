@@ -24,9 +24,44 @@ Copyright (C) 2016  Matthew Jarvis
 #include <sstream>
 #include <iostream> // TODO: remove later
 #include <iterator>
+#include <stdexcept>
 
+#include "json/json.h"
 #include "vector3d.h"
 #include "utilities.h"
+
+Configuration LoadConfiguration(std::string fileName)
+{
+    Json::Value root;
+    Json::Reader reader;
+    std::ifstream configFile(fileName);
+    std::string data((std::istreambuf_iterator<char>(configFile)), std::istreambuf_iterator<char>());
+
+    auto parsingSuccessful = reader.parse(data, root, false);
+    if (!parsingSuccessful)
+    {
+        throw std::invalid_argument("Failed to parse configuration file, :" + reader.getFormattedErrorMessages());
+    }
+
+    Configuration c;
+
+    // Load the input file
+    c.inputFile = root.get("input_file", "missing input file in config").asString();
+
+    // Load the bin widths for i, j, and k
+    double dx = root["voxel_space"].get("dx", 1).asDouble();
+    double dy = root["voxel_space"].get("dy", 1).asDouble();
+    double dz = root["voxel_space"].get("dz", 1).asDouble();
+    c.binWidths = Vector3d(dx, dy, dz);
+
+    // Load the bin offsets for i, j, and k
+    double x0 = root["voxel_space"].get("x0", 0).asDouble();
+    double y0 = root["voxel_space"].get("y0", 0).asDouble();
+    double z0 = root["voxel_space"].get("z0", 0).asDouble();
+    c.binOffsets = Vector3d(x0, y0, z0);
+
+    return c;
+}
 
 std::vector<Vector3d> LoadPointsFromFile(std::string fileName)
 {
@@ -52,4 +87,11 @@ std::vector<Vector3d> LoadPointsFromFile(std::string fileName)
     }
 
     return loaded;
+}
+
+void PrintConfigDetails(Configuration& config, int prefixSpace)
+{
+    std::cout << std::string(prefixSpace, ' ') << "input file:        " << config.inputFile << std::endl;
+    std::cout << std::string(prefixSpace, ' ') << "voxel bin widths:  " << config.binWidths.Text() << std::endl;
+    std::cout << std::string(prefixSpace, ' ') << "voxel bin offsets: " << config.binOffsets.Text() << std::endl;
 }

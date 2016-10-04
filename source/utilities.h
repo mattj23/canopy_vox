@@ -24,7 +24,18 @@ Copyright (C) 2016  Matthew Jarvis
 #include <string>
 #include "vector3d.h"
 
+
+struct Configuration
+{
+    std::string inputFile;
+    Vector3d binWidths;
+    Vector3d binOffsets;
+};
+
 std::vector<Vector3d> LoadPointsFromFile(std::string fileName);
 
+Configuration LoadConfiguration(std::string fileName);
+
+void PrintConfigDetails(Configuration& config, int prefixSpace);
 
 #endif
