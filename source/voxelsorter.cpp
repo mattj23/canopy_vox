@@ -37,6 +37,12 @@ VoxelAddress::VoxelAddress(const int _i, const int _j, const int _k)
     k = _k;
 }
 
+VoxelAddress::VoxelAddress()
+{
+    i = 0;
+    j = 0;
+    k = 0;
+}
 
 LocatedPoint::LocatedPoint(const Vector3d& p, const VoxelAddress& a)
 {
