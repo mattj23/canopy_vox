@@ -29,6 +29,7 @@ Copyright (C) 2013  Matthew Jarvis
 #include <tuple>
 #include <string>
 #include <sstream>
+#include <iostream>
 
 class Vector3d
 {
@@ -59,6 +60,8 @@ public:
     // Text
     std::string Text(void);
 };
+
+::std::ostream& operator<<(::std::ostream& os, const Vector3d& v);
 
 double AngleBetweenVectors(Vector3d v0, Vector3d v1);   // Generalized 3d case
 

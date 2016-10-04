@@ -27,8 +27,7 @@ Copyright (C) 2013  Matthew Jarvis
 #include <vector>
 #include <tuple>
 #include <algorithm>
-
-#include <iostream> // For debugging
+#include <iostream>
 
 #define ZERO_TOL	0.00001
 
@@ -143,6 +142,10 @@ std::string Vector3d::Text()
 	return s.str();
 }
 
+::std::ostream& operator<<(::std::ostream& os, const Vector3d& v)
+{
+	return os << "Vector3d(" << v.x << ", " << v.y << ", " << v.z << ")";
+}
 
 // Computes the angle between two arbitrary vectors [unit test in VectorAngles()]
 double AngleBetweenVectors(Vector3d v0, Vector3d v1)
