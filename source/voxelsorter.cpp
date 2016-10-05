@@ -31,8 +31,7 @@ Copyright (C) 2016   Matthew Jarvis
 #include "voxelsorter.h"
 #include <iostream>
 #include <cmath>
-
-
+#include <unordered_map>
 
 VoxelAddress::VoxelAddress(const int _i, const int _j, const int _k)
 {
@@ -76,4 +75,17 @@ LocatedPoint VoxelSorter::identifyPoint(const Vector3d& point) const
     int k_ = static_cast<int>(std::floor((point.z - kzero) / kspan));
 
     return LocatedPoint(point, VoxelAddress(i_, j_, k_));
+}
+
+void incrementVoxelIntensity(std::unordered_map<VoxelAddress, int>& v, const VoxelAddress& address)
+{
+    auto mapIterator = v.find(address);
+    if (mapIterator == v.end())
+    {
+        v[address] = 1;
+    }
+    else
+    {
+        mapIterator->second += 1;
+    }
 }

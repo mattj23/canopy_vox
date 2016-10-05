@@ -33,6 +33,7 @@ Copyright (C) 2016   Matthew Jarvis
 
 #include "vector3d.h"
 #include <iostream>
+#include <unordered_map>
 
 struct VoxelAddress
 {
@@ -60,6 +61,8 @@ namespace std
         }
     };
 }
+
+void incrementVoxelIntensity(std::unordered_map<VoxelAddress, int>&, const VoxelAddress&);
 
 ::std::ostream& operator<<(::std::ostream& os, const VoxelAddress& a);
 
@@ -89,4 +92,5 @@ protected:
     double jzero;
     double kzero;
 };
+
 #endif

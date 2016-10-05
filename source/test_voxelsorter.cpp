@@ -85,6 +85,21 @@ TEST (VoxelAddressTest, UnorderedMap)
     ASSERT_EQ(2, umap[VoxelAddress(2,3,4)]);
 }
 
+TEST (VoxelBinning, IncrementIntensity)
+{
+    std::unordered_map<VoxelAddress, int> voxels;
+    incrementVoxelIntensity(voxels, VoxelAddress(0, 0, 0));
+    incrementVoxelIntensity(voxels, VoxelAddress(1, 0, 0));
+    incrementVoxelIntensity(voxels, VoxelAddress(1, 0, 0));
+    incrementVoxelIntensity(voxels, VoxelAddress(0, 1, 0));
+    incrementVoxelIntensity(voxels, VoxelAddress(0, 1, 0));
+    incrementVoxelIntensity(voxels, VoxelAddress(0, 1, 0));
+
+    ASSERT_EQ(1, voxels[VoxelAddress(0,0,0)]);
+    ASSERT_EQ(2, voxels[VoxelAddress(1,0,0)]);
+    ASSERT_EQ(3, voxels[VoxelAddress(0,1,0)]);
+}
+
 int main(int argc, char **argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
