@@ -1,4 +1,5 @@
 #include <cmath>
+#include <unordered_map>
 #include <gtest/gtest.h>
 #include "voxelsorter.h"
 
@@ -74,6 +75,15 @@ TEST (VoxelSorterTest, ShiftedSort)
     ASSERT_EQ(VoxelAddress(1, 4, 5), p.address);
 }
 
+TEST (VoxelAddressTest, UnorderedMap)
+{
+    std::unordered_map<VoxelAddress, int> umap;
+    umap[VoxelAddress(1, 2, 3)] = 1;
+    umap[VoxelAddress(2, 3, 4)] = 2;
+    umap[VoxelAddress(3, 4, 5)] = 3;
+
+    ASSERT_EQ(2, umap[VoxelAddress(2,3,4)]);
+}
 
 int main(int argc, char **argv)
 {

@@ -32,6 +32,8 @@ Copyright (C) 2016   Matthew Jarvis
 #include <iostream>
 #include <cmath>
 
+
+
 VoxelAddress::VoxelAddress(const int _i, const int _j, const int _k)
 {
     i = _i;

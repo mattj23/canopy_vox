@@ -44,6 +44,23 @@ struct VoxelAddress
     VoxelAddress(const int _i, const int _j, const int _k);
 };
 
+namespace std
+{
+    // Hash function for voxel address
+    template <> struct hash<VoxelAddress>
+    {
+        inline size_t operator()(const VoxelAddress& x) const
+        {
+            size_t hash = x.i;
+            hash *= 37;
+            hash += x.j;
+            hash *= 37;
+            hash += x.k;
+            return hash;
+        }
+    };
+}
+
 ::std::ostream& operator<<(::std::ostream& os, const VoxelAddress& a);
 
 inline bool operator==(const VoxelAddress& lhs, const VoxelAddress& rhs) {return lhs.i == rhs.i && lhs.j == rhs.j && lhs.k == rhs.k;}
