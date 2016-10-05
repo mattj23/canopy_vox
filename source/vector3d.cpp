@@ -152,3 +152,29 @@ double AngleBetweenVectors(Vector3d v0, Vector3d v1)
 {
 	return acos(v0.Dot(v1) / (v0.Length() * v1.Length()));
 }
+
+// Performs naive, near O(n^2) thinning of a list of points by removing all
+// redundant points within the thinningDistance, starting at the beginning
+// of the vector.
+void naiveThinning(std::vector<Vector3d>& points, double thinningDistance)
+{
+    int idx = 0;
+    while (idx < points.size())
+    {
+        int jdx = idx + 1;
+        while (jdx < points.size())
+        {
+            if (points[idx].DistanceTo(points[jdx]) < thinningDistance)
+            {
+                // Remove the point at the jdx'th index, but leave jdx the same
+                // so that the next point is checked
+                points.erase(points.begin() + jdx);
+            }
+            else
+            {
+                jdx++;
+            }
+        }
+		idx++;
+    }
+}

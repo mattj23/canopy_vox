@@ -14,7 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License v3
 along with Canopy_Vox.  If not, see <http://www.gnu.org/licenses/>.
 
-Copyright (C) 2013  Matthew Jarvis
+Copyright (C) 2013-2016  Matthew Jarvis
 
 	This vector library defines a class that represents a vector in R3 space and
 	defines basic operations relating to that type, including addition, scalar
@@ -41,14 +41,28 @@ public:
     Vector3d();
     Vector3d(double x_, double y_, double z_);
 
+    // Returns the vector rotated about the x-axis by an angle in radians
     Vector3d RotateAboutX(double angle) const;
+
+    // Returns the vector rotated about the y-axis by an angle in radians
     Vector3d RotateAboutY(double angle) const;
+
+    // Returns the vector rotated about the z-axis by an angle in radians
     Vector3d RotateAboutZ(double angle) const;
+
+    // Returns a normalized unit vector
     Vector3d Unit(void) const;
 
+    // Returns the dot product of this vector and another vector
     double Dot(const Vector3d& other) const;
+
+    // Returns the distance between the end of this vector and another vector
     double DistanceTo(const Vector3d& other) const;
+
+    // Returns the length of this vector
     double Length(void) const;
+
+    // Returns the angle between this vector and another vector
     double AngleTo(const Vector3d& other) const;
 
     // Operators
@@ -61,9 +75,15 @@ public:
     std::string Text(void);
 };
 
+// Vector3d ostream printing operator
 ::std::ostream& operator<<(::std::ostream& os, const Vector3d& v);
 
-double AngleBetweenVectors(Vector3d v0, Vector3d v1);   // Generalized 3d case
+// Returns the angle between two vectors in radians
+double AngleBetweenVectors(Vector3d v0, Vector3d v1);
 
+// Performs naive, near O(n^2) thinning of a list of points by removing all
+// redundant points within the thinningDistance, starting at the beginning
+// of the vector and working its way to the end.
+void naiveThinning(std::vector<Vector3d>& points, double thinningDistance);
 
 #endif // VECTOR3D_H

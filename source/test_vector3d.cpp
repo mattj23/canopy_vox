@@ -1,5 +1,6 @@
 #include <cmath>
 #include <gtest/gtest.h>
+#include <vector>
 #include "vector3d.h"
 
 #define ZERO_TOL    0.000001
@@ -121,9 +122,60 @@ TEST(Vector3dTest, VectorAngles)
   ASSERT_NEAR( 98.14  * 3.14159 / 180.0, Vector3d(-0.54,0.14,0.88).AngleTo(  Vector3d(0.01,-0.72,0.00 )  ), 0.001);
   ASSERT_NEAR( 117.58 * 3.14159 / 180.0, Vector3d(0.26,0.85,-0.01).AngleTo(  Vector3d(0.73,-0.72,-0.02)  ), 0.001);
   ASSERT_NEAR( 95.13  * 3.14159 / 180.0, Vector3d(0.93,-0.39,-0.33).AngleTo( Vector3d(-0.35,-0.64,-0.02) ), 0.001);
-
 }
 
+std::vector<Vector3d> tvec1()
+{
+    std::vector<Vector3d> v;
+    for (int i = 0; i < 10; i++)
+    {
+        v.push_back(Vector3d(i, 0, 0));
+    }
+    return v;
+}
+
+std::vector<Vector3d> tvec2(std::vector<double> xs)
+{
+    std::vector<Vector3d> v;
+    for (auto d : xs)
+        v.push_back(Vector3d(d, 0, 0));
+    return v;
+}
+
+TEST(VectorListTest, NaiveThinningNoDeletes)
+{
+    auto v = tvec1();
+    auto e = tvec1();
+    naiveThinning(v, 0.1);
+    ASSERT_EQ(e.size(), v.size());
+}
+
+TEST(VectorListTest, NaiveThinningInitialDelete)
+{
+    auto e = tvec1();
+    std::vector<double> d{0, 0.1, 0.2, 0.3, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    auto v = tvec2(d);
+    naiveThinning(v, 1);
+    ASSERT_EQ(e, v);
+}
+
+TEST(VectorListTest, NaiveThinningClusterDelete)
+{
+    auto e = tvec1();
+    std::vector<double> d{0, 0.1, 0.2, 0.3, 1, 2, 0.4, 0.5, 3, 1.5, 1.6, 4, 5, 6, 7, 8, 9};
+    auto v = tvec2(d);
+    naiveThinning(v, 1);
+    ASSERT_EQ(e, v);
+}
+
+TEST(VectorListTest, NaiveThinningDeleteFromEnd)
+{
+    auto e = tvec1();
+    std::vector<double> d{0, 0.1, 0.2, 0.3, 1, 2, 0.4, 0.5, 3, 1.5, 1.6, 4, 5, 6, 7, 8, 9, 9.1, 9.2};
+    auto v = tvec2(d);
+    naiveThinning(v, 1);
+    ASSERT_EQ(e, v);
+}
 
 int main(int argc, char **argv)
 {
