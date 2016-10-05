@@ -30,6 +30,7 @@ struct Configuration
     std::string inputFile;
     Vector3d binWidths;
     Vector3d binOffsets;
+    double thinningDistance;
 };
 
 std::vector<Vector3d> LoadPointsFromFile(std::string fileName);

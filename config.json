@@ -1,5 +1,10 @@
+// This is a configuration file for the program, which negates the need for
+// any interactive interface or complex command line argument.  Simply
+// specify the configuration file as the first command line argument and
+// the program will do the rest.
 {
     "input_file": "sample_data/sample.asc",
+    "thinning_distance": 0.01,
     "voxel_space":{
         "dx": 0.1,
         "dy": 0.1,

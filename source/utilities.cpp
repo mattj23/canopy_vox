@@ -60,6 +60,9 @@ Configuration LoadConfiguration(std::string fileName)
     double z0 = root["voxel_space"].get("z0", 0).asDouble();
     c.binOffsets = Vector3d(x0, y0, z0);
 
+    // Load the thinning distance
+    c.thinningDistance = root.get("thinning_distance", 0).asDouble();
+
     return c;
 }
 
@@ -91,7 +94,9 @@ std::vector<Vector3d> LoadPointsFromFile(std::string fileName)
 
 void PrintConfigDetails(Configuration& config, int prefixSpace)
 {
-    std::cout << std::string(prefixSpace, ' ') << "input file:        " << config.inputFile << std::endl;
-    std::cout << std::string(prefixSpace, ' ') << "voxel bin widths:  " << config.binWidths.Text() << std::endl;
-    std::cout << std::string(prefixSpace, ' ') << "voxel bin offsets: " << config.binOffsets.Text() << std::endl;
+    std::string padding = std::string(prefixSpace, ' ');
+    std::cout << padding << "input file:        " << config.inputFile << std::endl;
+    std::cout << padding << "voxel bin widths:  " << config.binWidths.Text() << std::endl;
+    std::cout << padding << "voxel bin offsets: " << config.binOffsets.Text() << std::endl;
+    std::cout << padding << "thinning distance: " << config.thinningDistance << std::endl;
 }
