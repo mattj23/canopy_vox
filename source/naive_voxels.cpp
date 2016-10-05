@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 #include "vector3d.h"
 #include "utilities.h"
@@ -10,6 +11,8 @@ void printUsageInstructions()
 {
     std::cout << "naive_voxels: make sure to specify the config argument as a command line parameter" << std::endl;
 }
+
+
 
 int main(int argc, char* argv[])
 {
@@ -27,12 +30,28 @@ int main(int argc, char* argv[])
     std::vector<Vector3d> points = LoadPointsFromFile(config.inputFile);
     std::cout << "naive_voxels: Loaded " << points.size() << " points from file." << std::endl;
 
+    // Thin the points
+    naiveThinning(points, config.thinningDistance);
+    std::cout << "naive_voxels: Thinning completed, " << points.size() << " points remaining." << std::endl;
+
     // Make the voxel sorter
     VoxelSorter sorter(config.binWidths.x, config.binWidths.y, config.binWidths.z, config.binOffsets.x, config.binOffsets.y, config.binOffsets.z);
+
+    // Make the sparse voxel representation as an unordered_map
+    std::unordered_map<VoxelAddress, int> voxels;
+
+    // Run through all of the points, determine their voxel address, and increment
+    // the voxel intensity of that location
     for (auto p : points)
     {
         auto located = sorter.identifyPoint(p);
-        std::cout << p << " --> " << located.address << std::endl;
+        incrementVoxelIntensity(voxels, located.address);
+    }
+
+    // Print out the addresses and intensities
+    for (auto voxel : voxels)
+    {
+        std::cout << voxel.first << " = " << voxel.second << std::endl;
     }
 
     return 0;
