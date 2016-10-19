@@ -21,3 +21,10 @@ Copyright (C) 2013-2016  Matthew Jarvis
 #include <vector>
 #include "pointcloud.h"
 #include "vector3d.h"
+
+PointCloud::PointCloud() { };
+
+PointCloud::PointCloud(std::vector<Vector3d>&& v)
+{
+    pts = v;
+}

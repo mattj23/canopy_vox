@@ -4,6 +4,8 @@ LTESTFLAGS= -lgtest -lpthread # Link flags for Google Testing Framework
 BIN=./bin/
 SRC=./source/
 
+kdtree_voxels: $(SRC)kdtree_voxels.cpp $(BIN)pointcloud.o $(BIN)vector3d.o $(BIN)utilities.o $(BIN)jsoncpp.o $(BIN)voxelsorter.o
+	$(CC) $(SRC)kdtree_voxels.cpp $(BIN)vector3d.o $(BIN)pointcloud.o $(BIN)utilities.o $(BIN)jsoncpp.o $(BIN)voxelsorter.o -o $(BIN)kdtree_voxels $(CFLAGS)
 
 naive_voxels: $(SRC)naive_voxels.cpp $(BIN)vector3d.o $(BIN)utilities.o $(BIN)jsoncpp.o $(BIN)voxelsorter.o
 	$(CC) $(SRC)naive_voxels.cpp $(BIN)vector3d.o $(BIN)utilities.o $(BIN)jsoncpp.o $(BIN)voxelsorter.o -o $(BIN)naive_voxels $(CFLAGS)

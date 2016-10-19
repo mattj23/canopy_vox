@@ -57,7 +57,8 @@ public:
 	template <class BBOX>
 	bool kdtree_get_bbox(BBOX& /* bb */) const { return false; }
 
-
+    PointCloud();
+    PointCloud(std::vector<Vector3d>&&);
 };
 
 
