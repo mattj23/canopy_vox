@@ -4,8 +4,12 @@ LTESTFLAGS= -lgtest -lpthread # Link flags for Google Testing Framework
 BIN=./bin/
 SRC=./source/
 
+
 naive_voxels: $(SRC)naive_voxels.cpp $(BIN)vector3d.o $(BIN)utilities.o $(BIN)jsoncpp.o $(BIN)voxelsorter.o
 	$(CC) $(SRC)naive_voxels.cpp $(BIN)vector3d.o $(BIN)utilities.o $(BIN)jsoncpp.o $(BIN)voxelsorter.o -o $(BIN)naive_voxels $(CFLAGS)
+
+$(BIN)pointcloud.o: $(SRC)pointcloud.h $(SRC)pointcloud.cpp $(BIN)vector3d.o
+	$(CC) $(SRC)pointcloud.cpp $(BIN)vector3d.o -c -o $(BIN)pointcloud.o $(CFLAGS)
 
 $(BIN)utilities.o: $(SRC)utilities.cpp $(SRC)utilities.h $(BIN)vector3d.o $(BIN)jsoncpp.o
 	$(CC) $(SRC)utilities.cpp $(BIN)vector3d.o $(BIN)jsoncpp.o -c -o $(BIN)utilities.o $(CFLAGS)
@@ -19,6 +23,9 @@ $(BIN)voxel_tests: $(BIN)voxelsorter.o $(SRC)test_voxelsorter.cpp $(BIN)vector3d
 $(BIN)voxelsorter.o: $(SRC)voxelsorter.cpp $(SRC)voxelsorter.h $(BIN)vector3d.o
 	$(CC) $(SRC)voxelsorter.cpp $(BIN)vector3d.o -c -o $(BIN)voxelsorter.o $(CFLAGS)
 
+$(BIN)pointcloud_tests: $(BIN)pointcloud.o $(SRC)test_pointcloud.cpp $(BIN)vector3d.o
+	$(CC) $(BIN)pointcloud.o $(SRC)test_pointcloud.cpp $(BIN)vector3d.o -o $(BIN)pointcloud_tests $(CFLAGS) $(LTESTFLAGS)
+
 # g++ test_vector3d.cpp vector3d.cpp -o bin/gtest --std=gnu++11 -lgtest -lpthread
 $(BIN)vector_tests: $(BIN)vector3d.o $(SRC)test_vector3d.cpp
 	$(CC) $(SRC)test_vector3d.cpp $(BIN)vector3d.o -o $(BIN)vector_tests $(CFLAGS) $(LTESTFLAGS)
@@ -26,11 +33,12 @@ $(BIN)vector_tests: $(BIN)vector3d.o $(SRC)test_vector3d.cpp
 $(BIN)vector3d.o: $(SRC)vector3d.cpp $(SRC)vector3d.h
 	$(CC) $(SRC)vector3d.cpp -c -o $(BIN)vector3d.o $(CFLAGS)
 
-alltests: $(BIN)voxel_tests $(BIN)vector_tests
+alltests: $(BIN)voxel_tests $(BIN)vector_tests $(BIN)pointcloud_tests
 
 runtests: alltests
 	$(BIN)vector_tests
 	$(BIN)voxel_tests
+	$(BIN)pointcloud_tests
 
 clean:
 	\rm $(BIN)*

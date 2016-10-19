@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <cstdio>
 #include <fstream>
+#include <cmath>
 
 #include "vector3d.h"
 #include "utilities.h"
