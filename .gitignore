@@ -30,3 +30,6 @@
 
 #Binaries
 bin/*
+
+# Output and data files 
+*.asc

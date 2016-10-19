@@ -47,6 +47,7 @@ Configuration LoadConfiguration(std::string fileName)
 
     // Load the input file
     c.inputFile = root.get("input_file", "missing input file in config").asString();
+    c.outputFile = root.get("output_file", "default_output.asc").asString();
 
     // Load the bin widths for i, j, and k
     double dx = root["voxel_space"].get("dx", 1).asDouble();
@@ -96,6 +97,7 @@ void PrintConfigDetails(Configuration& config, int prefixSpace)
 {
     std::string padding = std::string(prefixSpace, ' ');
     std::cout << padding << "input file:        " << config.inputFile << std::endl;
+    std::cout << padding << "output file:       " << config.outputFile << std::endl;
     std::cout << padding << "voxel bin widths:  " << config.binWidths.Text() << std::endl;
     std::cout << padding << "voxel bin offsets: " << config.binOffsets.Text() << std::endl;
     std::cout << padding << "thinning distance: " << config.thinningDistance << std::endl;

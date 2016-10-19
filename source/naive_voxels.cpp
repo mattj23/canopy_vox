@@ -2,6 +2,8 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <cstdio>
+#include <fstream>
 
 #include "vector3d.h"
 #include "utilities.h"
@@ -11,8 +13,6 @@ void printUsageInstructions()
 {
     std::cout << "naive_voxels: make sure to specify the config argument as a command line parameter" << std::endl;
 }
-
-
 
 int main(int argc, char* argv[])
 {
@@ -48,10 +48,17 @@ int main(int argc, char* argv[])
         incrementVoxelIntensity(voxels, located.address);
     }
 
+    // Attempt to remove the output file
+    std::remove(config.outputFile.c_str());
+
+    // Open the output file
+    std::ofstream outfile;
+    outfile.open(config.outputFile, std::ios_base::app);
+
     // Print out the addresses and intensities
     for (auto voxel : voxels)
     {
-        std::cout << voxel.first << " = " << voxel.second << std::endl;
+        outfile << voxel.first.i << "," << voxel.first.j << "," << voxel.first.k << "," << voxel.second << std::endl;
     }
 
     return 0;

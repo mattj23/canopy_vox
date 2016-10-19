@@ -28,6 +28,7 @@ Copyright (C) 2016  Matthew Jarvis
 struct Configuration
 {
     std::string inputFile;
+    std::string outputFile;
     Vector3d binWidths;
     Vector3d binOffsets;
     double thinningDistance;
