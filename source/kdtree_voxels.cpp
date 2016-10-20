@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
     my_kd_tree_t index(3, cloud, KDTreeSingleIndexAdaptorParams(10));
     index.buildIndex();
     std::cout << "kdtree_voxels: index complete" << std::endl;
-    std::cout << "kdtree_voxels: thinning [0%]";
+    std::cout << "kdtree_voxels: Thinning point cloud [0%]";
 
     std::set<size_t> removeIndicies;
     const double searchRadius = config.thinningDistance*config.thinningDistance;
@@ -64,15 +64,14 @@ int main(int argc, char* argv[])
             }
         }
 
-        if (i % 100 == 0)
-            std::cout << "\rkdtree_voxels: thinning [" << (int)(i * 100 / cloud.pts.size()) << "%]";
+        if (i % 500 == 0)
+            std::cout << "\rkdtree_voxels: Thinning point cloud [" << (int)(i * 100 / cloud.pts.size()) << "%]";
     }
 
-    std::cout << "\rkdtree_voxels: Thinning completed, " << removeIndicies.size() << " points to remove." << std::endl;
+    cloud.RemoveAtIndicies(removeIndicies);
+    std::cout << "\rkdtree_voxels: Thinning completed, " << cloud.pts.size() << " points remaining." << std::endl;
 
-    return 0;
-
-    std::cout << "kdtree_voxels: Thinning completed, " << cloud.pts.size() << " points remaining." << std::endl;
+    std::cout << "kdtree_voxels: Sorting into voxels" << std::endl;
 
     // Make the voxel sorter
     VoxelSorter sorter(config.binWidths.x, config.binWidths.y, config.binWidths.z, config.binOffsets.x, config.binOffsets.y, config.binOffsets.z);
