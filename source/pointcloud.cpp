@@ -19,6 +19,8 @@ Copyright (C) 2013-2016  Matthew Jarvis
 */
 
 #include <vector>
+#include <set>
+
 #include "pointcloud.h"
 #include "vector3d.h"
 
@@ -27,4 +29,14 @@ PointCloud::PointCloud() { };
 PointCloud::PointCloud(std::vector<Vector3d>&& v)
 {
     pts = v;
+}
+
+void PointCloud::RemoveAtIndicies(const std::set<size_t>& remove)
+{
+    for (auto i = remove.rbegin(); i != remove.rend(); ++i)
+    {
+        // std::cout << "removing index " << *i << " -> " << pts[*i] << std::endl;
+        pts[*i] = pts.back();
+        pts.pop_back();
+    }
 }

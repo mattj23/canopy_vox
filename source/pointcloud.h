@@ -21,6 +21,7 @@ Copyright (C) 2013-2016  Matthew Jarvis
 #ifndef POINTCLOUD_H
 #define POINTCLOUD_H
 
+#include <set>
 #include <vector>
 #include "vector3d.h"
 
@@ -59,6 +60,10 @@ public:
 
     PointCloud();
     PointCloud(std::vector<Vector3d>&&);
+
+    void RemoveAtIndicies(const std::set<size_t>&);
+    inline size_t size() const { return pts.size(); }
+
 };
 
 
