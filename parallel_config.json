@@ -1,0 +1,16 @@
+// This is a configuration file for the program, which negates the need for
+// any interactive interface or complex command line argument.  Simply
+// specify the configuration file as the first command line argument and
+// the program will do the rest.
+{
+    "input_files": ["sample_data/AkinsStation1c.asc"],
+    "thinning_distance": 0.01,
+    "voxel_space":{
+        "dx": 0.1,
+        "dy": 0.1,
+        "dz": 0.1,
+        "x0": 0,
+        "y0": 0,
+        "z0": 0
+    }
+}

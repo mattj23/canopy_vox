@@ -34,10 +34,21 @@ struct Configuration
     double thinningDistance;
 };
 
+struct ParallelConfiguration
+{
+    std::vector<std::string> inputFiles;
+    std::string outputFile;
+    Vector3d binWidths;
+    Vector3d binOffsets;
+    double thinningDistance;
+};
+
 std::vector<Vector3d> LoadPointsFromFile(std::string fileName);
 
 Configuration LoadConfiguration(std::string fileName);
+ParallelConfiguration LoadParallelConfiguration(std::string fileName);
 
 void PrintConfigDetails(Configuration& config, int prefixSpace);
+void PrintConfigDetails(ParallelConfiguration& config, int prefixSpace);
 
 #endif
