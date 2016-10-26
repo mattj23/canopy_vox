@@ -1,6 +1,7 @@
 #include <mpi.h>
 #include <iostream>
 #include <unordered_map>
+#include <memory>
 
 #include "utilities.h"
 
@@ -8,75 +9,11 @@ enum class ProgramState { init, reading, stage1 };
 
 enum class WorkerTypes {director, reader, worker};
 
-class Process
-{
-public:
-
-    Process(size_t id, size_t size, ProgramState state)
-    {
-        worldId = id;
-        worldSize = size;
-        programState = state;
-    }
-
-    virtual void run() { std::cout << "Base process run never meant to be called" << std::endl; }
-
-protected:
-    size_t worldId;
-    size_t worldSize;
-    ProgramState programState;
-};
-
-class Director: public Process
-{
-public:
-    Director(size_t id, size_t size, ProgramState state):Process(id, size, state)
-    {
-
-    }
-
-    void run() override
-    {
-        std::cout<<"I'm a director! (" << worldId << "/" << worldSize << ")" << std::endl;
-    }
-
-};
-
-class Reader: public Process
-{
-public:
-    Reader(size_t id, size_t size, ProgramState state):Process(id, size, state)
-    {
-
-    }
-
-    void run() override
-    {
-        std::cout<<"I'm a reader! (" << worldId << "/" << worldSize << ")" << std::endl;
-    }
-
-};
-
-class Worker: public Process
-{
-public:
-    Worker(size_t id, size_t size, ProgramState state):Process(id, size, state)
-    {
-
-    }
-
-    void run() override
-    {
-        std::cout<<"I'm a worker! (" << worldId << "/" << worldSize << ")" << std::endl;
-    }
-
-};
-
-
-
 class Directory
 {
 public:
+
+
     Directory(size_t worldSize, const ParallelConfiguration &config)
     {
         // The 0-th worker is always the director
@@ -113,6 +50,91 @@ protected:
     std::unordered_map<size_t, WorkerTypes> mapping;
 };
 
+class Process
+{
+public:
+
+    Process(size_t id, size_t size, const ParallelConfiguration &configuration, std::shared_ptr<Directory> d)
+    {
+        worldId = id;
+        worldSize = size;
+        programState = ProgramState::init;
+        directory = d;
+        config = configuration;
+    }
+
+    virtual void run() { std::cout << "Base process run never meant to be called" << std::endl; }
+
+protected:
+    size_t worldId;
+    size_t worldSize;
+    ParallelConfiguration config;
+    ProgramState programState;
+    std::shared_ptr<Directory> directory;
+};
+
+class Director: public Process
+{
+public:
+    Director(size_t id, size_t size, const ParallelConfiguration &configuration, std::shared_ptr<Directory> d)
+    :Process(id, size, configuration, d)
+    {
+
+    }
+
+    void run() override
+    {
+        /* The director starts in */
+    }
+
+};
+
+class Reader: public Process
+{
+public:
+    Reader(size_t id, size_t size, const ParallelConfiguration &configuration, std::shared_ptr<Directory> d)
+    :Process(id, size, configuration, d)
+    {
+        // The readerNumber is the 0-index rank of the current reader
+        size_t readerNumber = worldId - 1;
+
+        // Figure out which files this reader is supposed to read
+        for (size_t i = 0; i < config.inputFiles.size(); i++)
+        {
+            if (i % directory->numberOfReaders() == readerNumber)
+                files.push_back(config.inputFiles[i]);
+        }
+
+        for (auto f : files)
+            std::cout << "Reader " << readerNumber << " - " << f << std::endl;
+    }
+
+    void run() override
+    {
+        std::cout<<"I'm a reader! (" << worldId << "/" << worldSize << ")" << std::endl;
+    }
+
+private:
+    std::vector<std::string> files;
+
+};
+
+class Worker: public Process
+{
+public:
+    Worker(size_t id, size_t size, const ParallelConfiguration &configuration, std::shared_ptr<Directory> d)
+    :Process(id, size, configuration, d)
+    {
+
+    }
+
+    void run() override
+    {
+        std::cout<<"I'm a worker! (" << worldId << "/" << worldSize << ")" << std::endl;
+    }
+
+};
+
 
 int main(int argc, char** argv)
 {
@@ -134,20 +156,20 @@ int main(int argc, char** argv)
     auto config = LoadParallelConfiguration(argv[1]);
 
     // Construct the process directory
-    Directory processDirectory(world_size, config);
+    std::shared_ptr<Directory> processDirectory(new Directory(world_size, config));
 
     Process *processWorker;
 
-    switch (processDirectory.getProcessType(world_rank))
+    switch (processDirectory->getProcessType(world_rank))
     {
         case WorkerTypes::director:
-            processWorker = new Director(world_rank, world_size, ProgramState::init);
+            processWorker = new Director(world_rank, world_size, config, processDirectory);
             break;
         case WorkerTypes::reader:
-            processWorker = new Reader(world_rank, world_size, ProgramState::init);
+            processWorker = new Reader(world_rank, world_size, config, processDirectory);
             break;
         case WorkerTypes::worker:
-            processWorker = new Worker(world_rank, world_size, ProgramState::init);
+            processWorker = new Worker(world_rank, world_size, config, processDirectory);
             break;
     }
 
