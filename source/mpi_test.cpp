@@ -5,7 +5,7 @@
 
 #include "utilities.h"
 
-enum class ProgramState { init, reading, stage1 };
+enum class ProgramState {reading, thinning, reading2, thinning2, finalize};
 
 enum class WorkerTypes {director, reader, worker};
 
@@ -62,7 +62,7 @@ public:
     {
         worldId = id;
         worldSize = size;
-        programState = ProgramState::init;
+        programState = ProgramState::reading;
         directory = d;
         config = configuration;
     }
@@ -88,7 +88,19 @@ public:
 
     void run() override
     {
-        /* The director starts in */
+        // Wait for all of the readers to say they're done
+
+        // Tell the workers to start thinning
+
+        // Wait for the workers to say they're done
+
+        // Tell the readers to begin stage 2
+
+        // Wait for the readers to say they're done
+
+        // Tell the workers to start thinning
+
+        // The Director's job is done, the Workers will finish from here
     }
 
 };
@@ -108,19 +120,31 @@ public:
             if (i % directory->numberOfReaders() == readerNumber)
                 files.push_back(config.inputFiles[i]);
         }
-
-        for (auto f : files)
-            std::cout << "Reader " << readerNumber << " - " << f << std::endl;
     }
 
     void run() override
     {
-        std::cout<<"I'm a reader! (" << worldId << "/" << worldSize << ")" << std::endl;
+        // Start with reading and transmitting all of the files
+        for (auto f : files)
+            readFile(f);
+
+        // Tell the Director we're done
+
+        // Wait for the director to tell us to proceed
+
+        // Read and transmit all of the scratch files
+
+        // Now we're finished and the process can end
     }
 
 private:
     std::vector<std::string> files;
+    std::unordered_map<size_t, std::vector<Vector3d>> transmitBuffers;
 
+    void readFile(std::string fileName)
+    {
+
+    }
 };
 
 class Worker: public Process
@@ -134,7 +158,23 @@ public:
 
     void run() override
     {
-        std::cout<<"I'm a worker! (" << worldId << "/" << worldSize << ")" << std::endl;
+        // Wait for incoming data: if it's from the readers add it to our local
+        // buffers and sort it into place, if it's from the Director start
+        // doing the thinning
+
+        // Write the intermediate files to the scratch directory
+
+        // Tell the director that we're done
+
+        // Wait for incoming data: if it's from the readers add it to our local
+        // buffers and sort it into place, if it's from the Director start
+        // doing the thinning
+
+        // Write the intermediate files to the scratch directory
+
+        // Perform the final voxelization
+
+
     }
 
 };
