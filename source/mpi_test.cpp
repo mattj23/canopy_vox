@@ -6,7 +6,7 @@
 #include "utilities.h"
 
 enum class ProgramState {reading, thinning, reading2, thinning2, finalize};
-
+enum class MessageInfo {readerDone, workerDone, startWorking};
 enum class WorkerTypes {director, reader, worker};
 
 /* The Directory class takes the MPI world size and the configuration settings
@@ -47,6 +47,24 @@ public:
     inline size_t numberOfWorkers() { return nWorkers; }
     inline WorkerTypes getProcessType(size_t rank) { return mapping[rank]; }
 
+    inline size_t director() {return 0;}
+    inline size_t workerByNumber(size_t worker) { return nReaders + 1 + worker; }
+    inline size_t readerByNumber(size_t reader) { return 1 + reader; }
+    inline size_t readerFromRank(size_t rank) { return rank - 1; }
+    inline size_t workerFromRank(size_t rank) { return rank - 1 - nReaders; }
+
+    void sendToDirector(MessageInfo info)
+    {
+        int messageCode = static_cast<int>(info);
+        MPI_Send(&messageCode, 1, MPI_INT, director(), 0, MPI_COMM_WORLD);
+    }
+
+    void tellProcessToStart(size_t processRank)
+    {
+        int messageCode = static_cast<int>(MessageInfo::startWorking);
+        MPI_Send(&messageCode, 1, MPI_INT, processRank, 0, MPI_COMM_WORLD);
+    }
+
 protected:
     size_t nReaders;
     size_t nWorkers;
@@ -83,12 +101,24 @@ public:
     Director(size_t id, size_t size, const ParallelConfiguration &configuration, std::shared_ptr<Directory> d)
     :Process(id, size, configuration, d)
     {
+        for (size_t i = 0; i < directory->numberOfReaders(); i++)
+            readers.push_back(false);
 
+        for (size_t i = 0; i < directory->numberOfWorkers(); i++)
+            workers.push_back(false);
     }
 
     void run() override
     {
         // Wait for all of the readers to say they're done
+        waitForReaders();
+
+        // Probe for any message coming in.  Tag 0 means an administrative
+        // message in the form of an int.
+
+
+        std::cout << "All readers done! " << std::endl;
+
 
         // Tell the workers to start thinning
 
@@ -102,6 +132,44 @@ public:
 
         // The Director's job is done, the Workers will finish from here
     }
+
+private:
+    std::vector<bool> readers;
+    std::vector<bool> workers;
+
+    bool areDone(const std::vector<bool> &vectorOfBools)
+    {
+        for (auto b : vectorOfBools)
+            if (!b)
+                return false;
+        return true;
+    }
+
+    void waitForReaders()
+    {
+        // Reset the readers
+        for (size_t i = 0; i < directory->numberOfReaders(); i++)
+            readers[i] = false;
+
+        int rawMessageCode;
+        MPI_Status status;
+        while (!areDone(readers))
+        {
+            MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+            if (status.MPI_TAG == 0)
+            {
+                MPI_Recv(&rawMessageCode, 1, MPI_INT, MPI_ANY_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, &status);
+            }
+
+            if (static_cast<MessageInfo>(rawMessageCode) == MessageInfo::readerDone)
+            {
+                int readerNumber = directory->readerFromRank(status.MPI_SOURCE);
+                std::cout << "Director recieved 'reader complete' from reader " << readerNumber << std::endl;
+                readers[readerNumber] = true;
+            }
+        }
+    }
+
 
 };
 
@@ -129,6 +197,7 @@ public:
             readFile(f);
 
         // Tell the Director we're done
+        directory->sendToDirector(MessageInfo::readerDone);
 
         // Wait for the director to tell us to proceed
 
@@ -143,7 +212,7 @@ private:
 
     void readFile(std::string fileName)
     {
-
+        ;
     }
 };
 
