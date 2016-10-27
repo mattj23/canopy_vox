@@ -9,11 +9,15 @@ enum class ProgramState { init, reading, stage1 };
 
 enum class WorkerTypes {director, reader, worker};
 
+/* The Directory class takes the MPI world size and the configuration settings
+and from it computes the task assignments of all of the processes in the MPI
+world.  This is computed by each process in a deterministic way in order to
+eliminate an initial step of communication between processes.  Additionaly,
+the Directory class contains helper methods for addressing and communication
+between processes. */
 class Directory
 {
 public:
-
-
     Directory(size_t worldSize, const ParallelConfiguration &config)
     {
         // The 0-th worker is always the director
@@ -63,7 +67,7 @@ public:
         config = configuration;
     }
 
-    virtual void run() { std::cout << "Base process run never meant to be called" << std::endl; }
+    virtual void run() = 0;
 
 protected:
     size_t worldId;
@@ -155,30 +159,25 @@ int main(int argc, char** argv)
 
     auto config = LoadParallelConfiguration(argv[1]);
 
-    // Construct the process directory
+    // Construct the process directory, which allows this process to know the
+    // ranks and assignments of the various other processes.
     std::shared_ptr<Directory> processDirectory(new Directory(world_size, config));
 
-    Process *processWorker;
-
+    // Construct and run the process object
+    std::unique_ptr<Process> processWorker;
     switch (processDirectory->getProcessType(world_rank))
     {
         case WorkerTypes::director:
-            processWorker = new Director(world_rank, world_size, config, processDirectory);
+            processWorker.reset(new Director(world_rank, world_size, config, processDirectory));
             break;
         case WorkerTypes::reader:
-            processWorker = new Reader(world_rank, world_size, config, processDirectory);
+            processWorker.reset(new Reader(world_rank, world_size, config, processDirectory));
             break;
         case WorkerTypes::worker:
-            processWorker = new Worker(world_rank, world_size, config, processDirectory);
+            processWorker.reset(new Worker(world_rank, world_size, config, processDirectory));
             break;
     }
-
-    //Worker *processWorker = new Director(world_rank, world_size, ProgramState::init);
     processWorker->run();
 
-    ///std::cout << processor_name << ", " << world_rank << "/" << world_size << std::endl;
-    delete processWorker;
-
     MPI_Finalize();
-
 }
