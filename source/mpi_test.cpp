@@ -4,6 +4,9 @@
 #include <memory>
 
 #include "utilities.h"
+#include "vector3d.h"
+#include "pointcloud.h"
+#include "voxelsorter.h"
 
 enum class ProgramState {reading, thinning, reading2, thinning2, finalize};
 enum class MessageInfo {readerDone, workerDone, startWorking};
@@ -93,6 +96,23 @@ protected:
     ParallelConfiguration config;
     ProgramState programState;
     std::shared_ptr<Directory> directory;
+
+    void waitForStartInstruction()
+    {
+        int rawMessageCode;
+        MPI_Status status;
+        bool gotStartMessage = false;
+        while (!gotStartMessage)
+        {
+            MPI_Probe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&rawMessageCode, 1, MPI_INT, MPI_ANY_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, &status);
+
+            if (static_cast<MessageInfo>(rawMessageCode) == MessageInfo::startWorking)
+            {
+                gotStartMessage = true;
+            }
+        }
+    }
 };
 
 class Director: public Process
@@ -111,24 +131,28 @@ public:
     void run() override
     {
         // Wait for all of the readers to say they're done
-        waitForReaders();
-
-        // Probe for any message coming in.  Tag 0 means an administrative
-        // message in the form of an int.
-
-
+        waitFor(readers, MessageInfo::readerDone);
         std::cout << "All readers done! " << std::endl;
 
-
         // Tell the workers to start thinning
+        for (size_t i = 0; i < directory->numberOfWorkers(); i++)
+            directory->tellProcessToStart(directory->workerByNumber(i));
 
         // Wait for the workers to say they're done
+        waitFor(workers, MessageInfo::workerDone);
+        std::cout << "All workers done!" << std::endl;
 
         // Tell the readers to begin stage 2
+        for (size_t i = 0; i < directory->numberOfReaders(); i++)
+            directory->tellProcessToStart(directory->readerByNumber(i));
 
         // Wait for the readers to say they're done
+        waitFor(readers, MessageInfo::readerDone);
+        std::cout << "All readers done! " << std::endl;
 
         // Tell the workers to start thinning
+        for (size_t i = 0; i < directory->numberOfWorkers(); i++)
+            directory->tellProcessToStart(directory->workerByNumber(i));
 
         // The Director's job is done, the Workers will finish from here
     }
@@ -145,15 +169,15 @@ private:
         return true;
     }
 
-    void waitForReaders()
+    void waitFor(std::vector<bool> &vectorOfBools, MessageInfo code)
     {
         // Reset the readers
-        for (size_t i = 0; i < directory->numberOfReaders(); i++)
-            readers[i] = false;
+        for (size_t i = 0; i < vectorOfBools.size(); i++)
+            vectorOfBools[i] = false;
 
         int rawMessageCode;
         MPI_Status status;
-        while (!areDone(readers))
+        while (!areDone(vectorOfBools))
         {
             MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
             if (status.MPI_TAG == 0)
@@ -161,16 +185,18 @@ private:
                 MPI_Recv(&rawMessageCode, 1, MPI_INT, MPI_ANY_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, &status);
             }
 
-            if (static_cast<MessageInfo>(rawMessageCode) == MessageInfo::readerDone)
+            if (static_cast<MessageInfo>(rawMessageCode) == code)
             {
-                int readerNumber = directory->readerFromRank(status.MPI_SOURCE);
-                std::cout << "Director recieved 'reader complete' from reader " << readerNumber << std::endl;
-                readers[readerNumber] = true;
+                int processNumber;
+                if (code == MessageInfo::readerDone)
+                    processNumber = directory->readerFromRank(status.MPI_SOURCE);
+                if (code == MessageInfo::workerDone)
+                    processNumber = directory->workerFromRank(status.MPI_SOURCE);
+
+                vectorOfBools[processNumber] = true;
             }
         }
     }
-
-
 };
 
 class Reader: public Process
@@ -200,6 +226,7 @@ public:
         directory->sendToDirector(MessageInfo::readerDone);
 
         // Wait for the director to tell us to proceed
+        // waitForStartInstruction();
 
         // Read and transmit all of the scratch files
 
@@ -230,10 +257,14 @@ public:
         // Wait for incoming data: if it's from the readers add it to our local
         // buffers and sort it into place, if it's from the Director start
         // doing the thinning
+        receiveData();
+
+        // Do the thinning
 
         // Write the intermediate files to the scratch directory
 
         // Tell the director that we're done
+        directory->sendToDirector(MessageInfo::workerDone);
 
         // Wait for incoming data: if it's from the readers add it to our local
         // buffers and sort it into place, if it's from the Director start
@@ -244,6 +275,36 @@ public:
         // Perform the final voxelization
 
 
+    }
+
+private:
+    std::unordered_map<VoxelAddress, std::vector<Vector3d>> rawData;
+
+    void receiveData()
+    {
+        rawData.clear();
+
+        MPI_Status status;
+        bool isReceiving = true;
+        while (isReceiving)
+        {
+            MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+
+            // Tag 0 means this is an administrative message
+            if (status.MPI_TAG == 0)
+            {
+                int rawMessageCode;
+                MPI_Recv(&rawMessageCode, 1, MPI_INT, MPI_ANY_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, &status);
+                if (static_cast<MessageInfo>(rawMessageCode) == MessageInfo::startWorking)
+                    isReceiving = false;
+            }
+
+            // Tag 1 means this is raw data
+            else if (status.MPI_TAG == 1)
+            {
+
+            }
+        }
     }
 
 };
