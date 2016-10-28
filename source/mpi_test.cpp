@@ -108,6 +108,19 @@ protected:
     ParallelConfiguration config;
     ProgramState programState;
     std::shared_ptr<Directory> directory;
+    std::unique_ptr<VoxelSorter> sorter;
+
+    void setSorter(bool isShifted)
+    {
+        int mult = 0;
+        while (config.voxelDistance * ++mult < config.binningDistance);
+        double dv = config.voxelDistance * mult;
+        // std::cout << "  grouping distance = " << dv << std::endl;
+        if (isShifted)
+            sorter.reset(new VoxelSorter(dv, dv, dv, dv/2.0, dv/2.0, dv/2.0));
+        else
+            sorter.reset(new VoxelSorter(dv, dv, dv, 0, 0, 0));
+    }
 
     void waitForStartInstruction()
     {
@@ -229,8 +242,7 @@ public:
     void run() override
     {
         // Construct the first stage voxel sorter
-        int groupSize = 4;
-        sorter.reset(new VoxelSorter(groupSize, groupSize, groupSize, groupSize/2, groupSize/2, groupSize/2));
+        setSorter(true);
 
         // Start with reading and transmitting all of the files
         for (auto f : files)
@@ -240,9 +252,23 @@ public:
         directory->sendToDirector(MessageInfo::readerDone);
 
         // Wait for the director to tell us to proceed
-        // waitForStartInstruction();
+        waitForStartInstruction();
+
+        // Reset the sorter to the unshifted position or the second stage
+        setSorter(false);
+
+        // There should be one scratch file per worker
+        std::vector<std::string> scratchFiles;
+        for (size_t i = 0; i < directory->numberOfWorkers(); i++)
+            scratchFiles.push_back(config.scratchDirectory + "worker" + std::to_string(i) + ".binary");
+        files = getMyFilesFromList(scratchFiles);
 
         // Read and transmit all of the scratch files
+        for (auto f: files)
+            readBinaryFile(f);
+
+        // Tell the Director we're done
+        directory->sendToDirector(MessageInfo::readerDone);
 
         // Now we're finished and the process can end
     }
@@ -250,7 +276,6 @@ public:
 private:
     std::vector<std::string> files;
     std::unordered_map<size_t, std::vector<Vector3d>> transmitBuffers;
-    std::unique_ptr<VoxelSorter> sorter;
     std::hash<VoxelAddress> hasher;
 
     double sendBuffer[MAX_SEND_SIZE * 3];
@@ -278,6 +303,52 @@ private:
         }
 
         MPI_Send(sendBuffer, i, MPI_DOUBLE, directory->workerByNumber(workerNumber), 1, MPI_COMM_WORLD);
+    }
+
+
+    void readBinaryFile(std::string fileName)
+    {
+        std::cout << "Reader " << directory->readerFromRank(worldId) << " is processing " << fileName << std::endl;
+
+        std::ifstream fileStream(fileName, std::ios::binary);
+
+        double ix, iy, iz;
+        while(fileStream.read(reinterpret_cast<char *>(&ix), sizeof(ix)))
+        {
+            fileStream.read(reinterpret_cast<char *>(&iy), sizeof(iy));
+            fileStream.read(reinterpret_cast<char *>(&iz), sizeof(iz));
+            Vector3d v(ix, iy, iz);
+
+            VoxelAddress address = sorter->identify(ix, iy, iz);
+
+            size_t worker = hasher(address) % directory->numberOfWorkers();
+
+            // Retrieve the transmit buffer for this worker
+            auto mapIterator = transmitBuffers.find(worker);
+            if (mapIterator == transmitBuffers.end())
+                transmitBuffers[worker] = std::vector<Vector3d>();
+            transmitBuffers[worker].push_back(v);
+
+            // std::cout << "Reader " << directory->readerFromRank(worldId) << " read point " << v << " for " << worker << std::endl;
+
+            // Send the transmit buffer if it's ready
+            if (transmitBuffers[worker].size() > MAX_SEND_SIZE - 1)
+            {
+                sendVectorsToWorker(worker, transmitBuffers[worker]);
+                transmitBuffers[worker].clear();
+            }
+
+        }
+
+        // Clear the remaining transmit buffers
+        for (auto pair : transmitBuffers)
+        {
+            if (pair.second.size() > 0)
+            {
+                sendVectorsToWorker(pair.first, pair.second);
+                pair.second.clear();
+            }
+        }
     }
 
     void readFile(std::string fileName)
@@ -351,12 +422,7 @@ public:
     void run() override
     {
         // Construct the first stage voxel sorter
-        int mult = 0;
-        while (config.voxelDistance * ++mult < config.binningDistance);
-
-        double dv = config.voxelDistance * mult;
-        std::cout << "  grouping distance = " << dv << std::endl;
-        sorter.reset(new VoxelSorter(dv, dv, dv, dv/2.0, dv/2.0, dv/2.0));
+        setSorter(true);
 
         // Wait for incoming data: if it's from the readers add it to our local
         // buffers and sort it into place, if it's from the Director start
@@ -371,26 +437,39 @@ public:
         }
 
         writeBinaryRegions(config.scratchDirectory + "worker" + std::to_string(directory->workerFromRank(worldId)) + ".binary");
-        std::cout << "Worker " << directory->workerFromRank(worldId) << " has completed " << rawData.size() << " regions" << std::endl;
+        std::cout << "Worker " << directory->workerFromRank(worldId) << " has thined " << rawData.size() << " regions" << std::endl;
 
         // Write the intermediate files to the scratch directory
         // Tell the director that we're done
         directory->sendToDirector(MessageInfo::workerDone);
 
+        // Reset the sorter to the second stage position
+        setSorter(false);
+
         // Wait for incoming data: if it's from the readers add it to our local
         // buffers and sort it into place, if it's from the Director start
         // doing the thinning
+        receiveData();
 
-        // Write the intermediate files to the scratch directory
+        // Do the thinning
+        for (auto pair : rawData)
+        {
+            size_t original = pair.second.size();
+            thinRegion(pair.second);
+        }
+
+        std::cout << "Worker " << directory->workerFromRank(worldId) << " has thinned " << rawData.size() << " regions" << std::endl;
 
         // Perform the final voxelization
+
+        // Tell the director we're done
+        directory->sendToDirector(MessageInfo::workerDone);
 
 
     }
 
 private:
     std::unordered_map<VoxelAddress, PointCloud> rawData;
-    std::unique_ptr<VoxelSorter> sorter;
     double recvBuffer[MAX_SEND_SIZE * 3];
 
     void receiveData()
@@ -471,7 +550,9 @@ private:
             for (auto p : pair.second.pts)
             {
                 // .write(reinterpret_cast<char *>(&x), sizeof(x))
-                fileStream.write(reinterpret_cast<char*>(&p), sizeof(p));
+                fileStream.write(reinterpret_cast<char*>(&p.x), sizeof(p.x));
+                fileStream.write(reinterpret_cast<char*>(&p.y), sizeof(p.y));
+                fileStream.write(reinterpret_cast<char*>(&p.z), sizeof(p.z));
             }
 
         }
