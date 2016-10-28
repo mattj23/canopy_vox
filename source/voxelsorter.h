@@ -83,7 +83,8 @@ class VoxelSorter
 public:
     VoxelSorter(double di, double dj, double dk, double i0, double j0, double k0);
     LocatedPoint identifyPoint(const Vector3d& point) const;
-
+    VoxelAddress identify(double x, double y, double z);
+    
 protected:
     double ispan;
     double jspan;

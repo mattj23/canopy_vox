@@ -13,6 +13,8 @@
 #include "pointcloud.h"
 #include "voxelsorter.h"
 
+#define MAX_SEND_SIZE 100
+
 enum class ProgramState {reading, thinning, reading2, thinning2, finalize};
 enum class MessageInfo {readerDone, workerDone, startWorking};
 enum class WorkerTypes {director, reader, worker};
@@ -224,7 +226,9 @@ public:
     void run() override
     {
         // Construct the first stage voxel sorter
-        sorter.reset(new VoxelSorter(10, 10, 10, 5, 5, 5));
+        int groupSize = 4;
+
+        sorter.reset(new VoxelSorter(groupSize, groupSize, groupSize, groupSize/2, groupSize/2, groupSize/2));
 
         // Start with reading and transmitting all of the files
         for (auto f : files)
@@ -245,15 +249,33 @@ private:
     std::vector<std::string> files;
     std::unordered_map<size_t, std::vector<Vector3d>> transmitBuffers;
     std::unique_ptr<VoxelSorter> sorter;
+    std::hash<VoxelAddress> hasher;
+
+    double sendBuffer[MAX_SEND_SIZE * 3];
+
+    void sendVectorsToWorker(size_t workerNumber, const std::vector<Vector3d> &sendList)
+    {
+        // Load the buffer
+        size_t i = 0;
+        for (Vector3d v : sendList)
+        {
+            sendBuffer[i++] = v.z;
+            sendBuffer[i++] = v.y;
+            sendBuffer[i++] = v.x;
+        }
+
+        MPI_Send(sendBuffer, i, MPI_DOUBLE, directory->workerByNumber(workerNumber), 1, MPI_COMM_WORLD);
+
+    }
 
     void readFile(std::string fileName)
     {
-        std::unordered_map<VoxelAddress, int> allVoxels;
-
         std::ifstream workingFile(fileName);
         std::string workingLine;
 
         double sx, sy, sz;
+
+        size_t count = 0;
 
         while (std::getline(workingFile, workingLine))
         {
@@ -263,16 +285,35 @@ private:
             if (tokens.size() < 3)
                 continue;
 
+            // Read the values in the text lines
             sx = std::stod(tokens[0]);
             sy = std::stod(tokens[1]);
             sz = std::stod(tokens[2]);
+
+            // Create the vector object and the voxel address
             Vector3d v(sx, sy, sz);
-            auto point = sorter->identifyPoint(v);
-            allVoxels[point.address] = 0;
+            VoxelAddress address = sorter->identify(sx, sy, sz);
+
+            size_t worker = hasher(address) % directory->numberOfWorkers();
+
+            // Retrieve the transmit buffer for this worker
+            auto mapIterator = transmitBuffers.find(worker);
+            if (mapIterator == transmitBuffers.end())
+                transmitBuffers[worker] = std::vector<Vector3d>();
+            transmitBuffers[worker].push_back(v);
+
+            std::cout << "Reader " << directory->readerFromRank(worldId) << " read point " << v << " for " << worker << std::endl;
+
+            // Send the transmit buffer if it's ready
+            if (transmitBuffers[worker].size() >= 2)
+            {
+                sendVectorsToWorker(worker, transmitBuffers[worker]);
+                transmitBuffers[worker].clear();
+                break;
+            }
 
         }
 
-        std::cout<<"File voxels total: " << allVoxels.size() << std::endl;
     }
 };
 
@@ -312,6 +353,7 @@ public:
 
 private:
     std::unordered_map<VoxelAddress, std::vector<Vector3d>> rawData;
+    double recvBuffer[MAX_SEND_SIZE * 3];
 
     void receiveData()
     {
@@ -337,6 +379,14 @@ private:
             {
                 int recvCount;
                 MPI_Get_count(&status, MPI_DOUBLE, &recvCount);
+                MPI_Recv(recvBuffer, recvCount, MPI_DOUBLE, MPI_ANY_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, &status);
+
+                // Unpack the buffer
+                for (size_t i = 0; i < recvCount; )
+                {
+                    Vector3d v(recvBuffer[i++], recvBuffer[i++], recvBuffer[i++]);
+                    std::cout << "Worker " << directory->workerFromRank(worldId) << " received " << v << std::endl;
+                }
             }
         }
     }

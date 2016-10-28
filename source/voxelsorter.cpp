@@ -77,7 +77,7 @@ LocatedPoint VoxelSorter::identifyPoint(const Vector3d& point) const
     return LocatedPoint(point, VoxelAddress(i_, j_, k_));
 }
 
-VoxelAddress identify(double x, double y, double z)
+VoxelAddress VoxelSorter::identify(double x, double y, double z)
 {
     int i_ = static_cast<int>(std::floor((x - izero) / ispan));
     int j_ = static_cast<int>(std::floor((y - jzero) / jspan));
