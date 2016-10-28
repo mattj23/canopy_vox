@@ -472,6 +472,7 @@ public:
         // Perform the final voxelization
         VoxelSorter finalSorter(config.voxelDistance, config.voxelDistance, config.voxelDistance, 0, 0, 0);
 
+        size_t count = 0;
         std::unordered_map<VoxelAddress, int> voxels;
         for (auto pair : rawData)
         {
@@ -482,13 +483,17 @@ public:
             }
         }
 
+
         std::string outputFile = config.outputDirectory + "worker" + std::to_string(workerNumber) + ".sparsevox";
         std::ofstream outfile;
         outfile.open(outputFile.c_str(), std::ios::out);
+
         for (auto voxel : voxels)
         {
+            count += voxel.second;
             outfile << voxel.first.i << "," << voxel.first.j << "," << voxel.first.k << "," << voxel.second << std::endl;
         }
+        std::cout << "!! Worker " << workerNumber << " sorted " << count << " points" << std::endl;
 
         // Tell the director we're done
         directory->sendToDirector(MessageInfo::workerDone);
