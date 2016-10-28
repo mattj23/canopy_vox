@@ -3,7 +3,7 @@
 // specify the configuration file as the first command line argument and
 // the program will do the rest.
 {
-    "input_files": ["sample_data/AkinsStation1c.asc", "sample_data/AkinsStation2c.asc", "sample_data/AkinsStation3c.asc"],
+    "input_files": ["sample_data/AkinsStation1c.asc"],
     "thinning_distance": 0.01,
     "voxel_space":{
         "dx": 0.1,

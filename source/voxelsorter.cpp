@@ -77,6 +77,15 @@ LocatedPoint VoxelSorter::identifyPoint(const Vector3d& point) const
     return LocatedPoint(point, VoxelAddress(i_, j_, k_));
 }
 
+VoxelAddress identify(double x, double y, double z)
+{
+    int i_ = static_cast<int>(std::floor((x - izero) / ispan));
+    int j_ = static_cast<int>(std::floor((y - jzero) / jspan));
+    int k_ = static_cast<int>(std::floor((z - kzero) / kspan));
+
+    return VoxelAddress(i_, j_, k_);
+}
+
 void incrementVoxelIntensity(std::unordered_map<VoxelAddress, int>& v, const VoxelAddress& address)
 {
     auto mapIterator = v.find(address);

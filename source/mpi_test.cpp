@@ -1,7 +1,12 @@
 #include <mpi.h>
+
 #include <iostream>
-#include <unordered_map>
+#include <vector>
+#include <fstream>
+#include <sstream>
+#include <iterator>
 #include <memory>
+#include <unordered_map>
 
 #include "utilities.h"
 #include "vector3d.h"
@@ -218,6 +223,9 @@ public:
 
     void run() override
     {
+        // Construct the first stage voxel sorter
+        sorter.reset(new VoxelSorter(10, 10, 10, 5, 5, 5));
+
         // Start with reading and transmitting all of the files
         for (auto f : files)
             readFile(f);
@@ -236,10 +244,35 @@ public:
 private:
     std::vector<std::string> files;
     std::unordered_map<size_t, std::vector<Vector3d>> transmitBuffers;
+    std::unique_ptr<VoxelSorter> sorter;
 
     void readFile(std::string fileName)
     {
-        ;
+        std::unordered_map<VoxelAddress, int> allVoxels;
+
+        std::ifstream workingFile(fileName);
+        std::string workingLine;
+
+        double sx, sy, sz;
+
+        while (std::getline(workingFile, workingLine))
+        {
+            std::istringstream i(workingLine);
+            std::vector<std::string> tokens{std::istream_iterator<std::string>(i), std::istream_iterator<std::string>()};
+
+            if (tokens.size() < 3)
+                continue;
+
+            sx = std::stod(tokens[0]);
+            sy = std::stod(tokens[1]);
+            sz = std::stod(tokens[2]);
+            Vector3d v(sx, sy, sz);
+            auto point = sorter->identifyPoint(v);
+            allVoxels[point.address] = 0;
+
+        }
+
+        std::cout<<"File voxels total: " << allVoxels.size() << std::endl;
     }
 };
 
@@ -302,7 +335,8 @@ private:
             // Tag 1 means this is raw data
             else if (status.MPI_TAG == 1)
             {
-
+                int recvCount;
+                MPI_Get_count(&status, MPI_DOUBLE, &recvCount);
             }
         }
     }
