@@ -461,6 +461,25 @@ public:
         std::cout << "Worker " << directory->workerFromRank(worldId) << " has thinned " << rawData.size() << " regions" << std::endl;
 
         // Perform the final voxelization
+        VoxelSorter finalSorter(config.voxelDistance, config.voxelDistance, config.voxelDistance, 0, 0, 0);
+
+        std::unordered_map<VoxelAddress, int> voxels;
+        for (auto pair : rawData)
+        {
+            for (auto p : pair.second.pts)
+            {
+                auto located = finalSorter.identifyPoint(p);
+                incrementVoxelIntensity(voxels, located.address);
+            }
+        }
+
+        std::string outputFile = config.outputDirectory + "worker" + std::to_string(directory->workerFromRank(worldId)) + ".sparsevox";
+        std::ofstream outfile;
+        outfile.open(outputFile.c_str(), std::ios::out);
+        for (auto voxel : voxels)
+        {
+            outfile << voxel.first.i << "," << voxel.first.j << "," << voxel.first.k << "," << voxel.second << std::endl;
+        }
 
         // Tell the director we're done
         directory->sendToDirector(MessageInfo::workerDone);
