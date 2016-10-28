@@ -227,7 +227,6 @@ public:
     {
         // Construct the first stage voxel sorter
         int groupSize = 4;
-
         sorter.reset(new VoxelSorter(groupSize, groupSize, groupSize, groupSize/2, groupSize/2, groupSize/2));
 
         // Start with reading and transmitting all of the files
@@ -270,6 +269,8 @@ private:
 
     void readFile(std::string fileName)
     {
+        std::cout << "Reader " << directory->readerFromRank(worldId) << " is processing " << fileName << std::endl;
+
         std::ifstream workingFile(fileName);
         std::string workingLine;
 
@@ -302,18 +303,26 @@ private:
                 transmitBuffers[worker] = std::vector<Vector3d>();
             transmitBuffers[worker].push_back(v);
 
-            std::cout << "Reader " << directory->readerFromRank(worldId) << " read point " << v << " for " << worker << std::endl;
+            // std::cout << "Reader " << directory->readerFromRank(worldId) << " read point " << v << " for " << worker << std::endl;
 
             // Send the transmit buffer if it's ready
-            if (transmitBuffers[worker].size() >= 2)
+            if (transmitBuffers[worker].size() > MAX_SEND_SIZE - 1)
             {
                 sendVectorsToWorker(worker, transmitBuffers[worker]);
                 transmitBuffers[worker].clear();
-                break;
             }
 
         }
 
+        // Clear the remaining transmit buffers
+        for (auto pair : transmitBuffers)
+        {
+            if (pair.second.size() > 0)
+            {
+                sendVectorsToWorker(pair.first, pair.second);
+                pair.second.clear();
+            }
+        }
     }
 };
 
@@ -328,10 +337,20 @@ public:
 
     void run() override
     {
+        // Construct the first stage voxel sorter
+        int groupSize = 4;
+        sorter.reset(new VoxelSorter(groupSize, groupSize, groupSize, groupSize/2, groupSize/2, groupSize/2));
+
         // Wait for incoming data: if it's from the readers add it to our local
         // buffers and sort it into place, if it's from the Director start
         // doing the thinning
         receiveData();
+
+        size_t sum = 0;
+        for (auto pair : rawData)
+            sum += pair.second.size();
+
+        std::cout << "Worker " << directory->workerFromRank(worldId) << " has " << rawData.size() << " regions with " << sum << "points total." << std::endl;
 
         // Do the thinning
 
@@ -353,6 +372,7 @@ public:
 
 private:
     std::unordered_map<VoxelAddress, std::vector<Vector3d>> rawData;
+    std::unique_ptr<VoxelSorter> sorter;
     double recvBuffer[MAX_SEND_SIZE * 3];
 
     void receiveData()
@@ -385,7 +405,13 @@ private:
                 for (size_t i = 0; i < recvCount; )
                 {
                     Vector3d v(recvBuffer[i++], recvBuffer[i++], recvBuffer[i++]);
-                    std::cout << "Worker " << directory->workerFromRank(worldId) << " received " << v << std::endl;
+                    // std::cout << "Worker " << directory->workerFromRank(worldId) << " received " << v << std::endl;
+
+                    auto located = sorter->identifyPoint(v);
+                    auto mapIterator = rawData.find(located.address);
+                    if (mapIterator == rawData.end())
+                        rawData[located.address] = std::vector<Vector3d>();
+                    rawData[located.address].push_back(v);
                 }
             }
         }
