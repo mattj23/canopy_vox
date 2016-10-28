@@ -1,5 +1,7 @@
 #include <mpi.h>
 
+#include <set>
+#include <cmath>
 #include <iostream>
 #include <vector>
 #include <fstream>
@@ -8,10 +10,13 @@
 #include <memory>
 #include <unordered_map>
 
+#include "nanoflann.hpp"
 #include "utilities.h"
 #include "vector3d.h"
 #include "pointcloud.h"
 #include "voxelsorter.h"
+
+using namespace nanoflann;
 
 #define MAX_SEND_SIZE 100
 
@@ -139,7 +144,7 @@ public:
     {
         // Wait for all of the readers to say they're done
         waitFor(readers, MessageInfo::readerDone);
-        std::cout << "All readers done! " << std::endl;
+        std::cout << "Director has confirmed that all readers have finished distributing stage 1 data" << std::endl;
 
         // Tell the workers to start thinning
         for (size_t i = 0; i < directory->numberOfWorkers(); i++)
@@ -147,7 +152,7 @@ public:
 
         // Wait for the workers to say they're done
         waitFor(workers, MessageInfo::workerDone);
-        std::cout << "All workers done!" << std::endl;
+        std::cout << "Director has confirmed that all workers have finished stage 1 thinning" << std::endl;
 
         // Tell the readers to begin stage 2
         for (size_t i = 0; i < directory->numberOfReaders(); i++)
@@ -155,13 +160,16 @@ public:
 
         // Wait for the readers to say they're done
         waitFor(readers, MessageInfo::readerDone);
-        std::cout << "All readers done! " << std::endl;
+        std::cout << "Director has confirmed that all readers have finished distributing stage 2 data" << std::endl;
 
         // Tell the workers to start thinning
         for (size_t i = 0; i < directory->numberOfWorkers(); i++)
             directory->tellProcessToStart(directory->workerByNumber(i));
 
-        // The Director's job is done, the Workers will finish from here
+        waitFor(workers, MessageInfo::workerDone);
+        std::cout << "Director has confirmed that all workers have finished stage 2 thinning and sorting" << std::endl;
+        std::cout << "Director reports that the run is now complete" << std::endl;
+
     }
 
 private:
@@ -346,16 +354,19 @@ public:
         // doing the thinning
         receiveData();
 
-        size_t sum = 0;
-        for (auto pair : rawData)
-            sum += pair.second.size();
-
-        std::cout << "Worker " << directory->workerFromRank(worldId) << " has " << rawData.size() << " regions with " << sum << "points total." << std::endl;
-
         // Do the thinning
+        for (auto pair : rawData)
+        {
+            size_t original = pair.second.size();
+            thinRegion(pair.second);
+            writeRegion("null", pair.second);
+
+            // std::cout << "region thinned from " << original << " to " << pair.second.size() << std::endl;
+        }
+        std::cout << "Worker " << directory->workerFromRank(worldId) << " has completed " << rawData.size() << " regions" << std::endl;
+
 
         // Write the intermediate files to the scratch directory
-
         // Tell the director that we're done
         directory->sendToDirector(MessageInfo::workerDone);
 
@@ -371,7 +382,7 @@ public:
     }
 
 private:
-    std::unordered_map<VoxelAddress, std::vector<Vector3d>> rawData;
+    std::unordered_map<VoxelAddress, PointCloud> rawData;
     std::unique_ptr<VoxelSorter> sorter;
     double recvBuffer[MAX_SEND_SIZE * 3];
 
@@ -410,13 +421,45 @@ private:
                     auto located = sorter->identifyPoint(v);
                     auto mapIterator = rawData.find(located.address);
                     if (mapIterator == rawData.end())
-                        rawData[located.address] = std::vector<Vector3d>();
-                    rawData[located.address].push_back(v);
+                        rawData[located.address] = PointCloud();
+                    rawData[located.address].pts.push_back(v);
                 }
             }
         }
     }
 
+    void thinRegion(PointCloud &cloud)
+    {
+        typedef KDTreeSingleIndexAdaptor<L2_Simple_Adaptor<double, PointCloud> ,PointCloud,3> my_kd_tree_t;
+        my_kd_tree_t index(3, cloud, KDTreeSingleIndexAdaptorParams(10));
+        index.buildIndex();
+
+        std::set<size_t> removeIndicies;
+        const double searchRadius = config.thinningDistance * config.thinningDistance;
+        for (size_t i = 0; i < cloud.pts.size(); i++)
+        {
+            if (removeIndicies.find(i) == removeIndicies.end())
+            {
+                double query_pt[3] = { cloud.pts[i].x, cloud.pts[i].y, cloud.pts[i].z};
+
+                std::vector<std::pair<size_t,double>> indices_dists;
+                RadiusResultSet<double,size_t> resultSet(searchRadius, indices_dists);
+                index.findNeighbors(resultSet, query_pt, nanoflann::SearchParams());
+
+                for (auto r : resultSet.m_indices_dists)
+                {
+                    if (i != r.first)
+                        removeIndicies.insert(r.first);
+                }
+            }
+        }
+        cloud.RemoveAtIndicies(removeIndicies);
+    }
+
+    void writeRegion(std::string fileName, const PointCloud &cloud)
+    {
+        ;
+    }
 };
 
 
