@@ -220,15 +220,8 @@ public:
     Reader(size_t id, size_t size, const ParallelConfiguration &configuration, std::shared_ptr<Directory> d)
     :Process(id, size, configuration, d)
     {
-        // The readerNumber is the 0-index rank of the current reader
-        size_t readerNumber = worldId - 1;
-
         // Figure out which files this reader is supposed to read
-        for (size_t i = 0; i < config.inputFiles.size(); i++)
-        {
-            if (i % directory->numberOfReaders() == readerNumber)
-                files.push_back(config.inputFiles[i]);
-        }
+        files = getMyFilesFromList(config.inputFiles);
     }
 
     void run() override
@@ -259,6 +252,17 @@ private:
     std::hash<VoxelAddress> hasher;
 
     double sendBuffer[MAX_SEND_SIZE * 3];
+
+    std::vector<std::string> getMyFilesFromList(std::vector<std::string> allFiles)
+    {
+        std::vector<std::string> v;
+        for (size_t i = 0; i < allFiles.size(); i++)
+        {
+            if (i % directory->numberOfReaders() == directory->readerFromRank(worldId))
+                v.push_back(allFiles[i]);
+        }
+        return v;
+    }
 
     void sendVectorsToWorker(size_t workerNumber, const std::vector<Vector3d> &sendList)
     {
