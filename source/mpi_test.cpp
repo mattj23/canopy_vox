@@ -278,7 +278,6 @@ private:
         }
 
         MPI_Send(sendBuffer, i, MPI_DOUBLE, directory->workerByNumber(workerNumber), 1, MPI_COMM_WORLD);
-
     }
 
     void readFile(std::string fileName)
@@ -352,8 +351,12 @@ public:
     void run() override
     {
         // Construct the first stage voxel sorter
-        int groupSize = 4;
-        sorter.reset(new VoxelSorter(groupSize, groupSize, groupSize, groupSize/2, groupSize/2, groupSize/2));
+        int mult = 0;
+        while (config.voxelDistance * ++mult < config.binningDistance);
+
+        double dv = config.voxelDistance * mult;
+        std::cout << "  grouping distance = " << dv << std::endl;
+        sorter.reset(new VoxelSorter(dv, dv, dv, dv/2.0, dv/2.0, dv/2.0));
 
         // Wait for incoming data: if it's from the readers add it to our local
         // buffers and sort it into place, if it's from the Director start
@@ -365,12 +368,10 @@ public:
         {
             size_t original = pair.second.size();
             thinRegion(pair.second);
-            writeRegion("null", pair.second);
-
-            // std::cout << "region thinned from " << original << " to " << pair.second.size() << std::endl;
         }
-        std::cout << "Worker " << directory->workerFromRank(worldId) << " has completed " << rawData.size() << " regions" << std::endl;
 
+        writeBinaryRegions(config.scratchDirectory + "worker" + std::to_string(directory->workerFromRank(worldId)) + ".binary");
+        std::cout << "Worker " << directory->workerFromRank(worldId) << " has completed " << rawData.size() << " regions" << std::endl;
 
         // Write the intermediate files to the scratch directory
         // Tell the director that we're done
@@ -462,9 +463,18 @@ private:
         cloud.RemoveAtIndicies(removeIndicies);
     }
 
-    void writeRegion(std::string fileName, const PointCloud &cloud)
+    void writeBinaryRegions(std::string fileName)
     {
-        ;
+        std::ofstream fileStream(fileName.c_str(), std::ios::binary);
+        for (auto pair : rawData)
+        {
+            for (auto p : pair.second.pts)
+            {
+                // .write(reinterpret_cast<char *>(&x), sizeof(x))
+                fileStream.write(reinterpret_cast<char*>(&p), sizeof(p));
+            }
+
+        }
     }
 };
 

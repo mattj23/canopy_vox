@@ -3,14 +3,10 @@
 // specify the configuration file as the first command line argument and
 // the program will do the rest.
 {
-    "input_files": ["sample_data/AkinsStation1c.asc", "sample_data/AkinsStation2c.asc"],
+    "input_files": ["sample_data/AkinsStation1c.asc"],
     "thinning_distance": 0.01,
-    "scratch_directory": "/home/matt/voxel/scratch",
-    "output_directory": "/home/matt/voxel/output",
+    "scratch_directory": "/home/matt/voxel/scratch/",
+    "output_directory": "/home/matt/voxel/output/",
     "binning_distance": 5,
-    "voxel_space":{
-        "dx": 0.1,
-        "dy": 0.1,
-        "dz": 0.1
-    }
+    "voxel_distance": 0.1
 }

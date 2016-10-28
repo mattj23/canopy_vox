@@ -39,7 +39,7 @@ struct ParallelConfiguration
     std::vector<std::string> inputFiles;
     std::string outputDirectory;
     std::string scratchDirectory;
-    Vector3d binWidths;
+    double voxelDistance;
     double binningDistance;
     double thinningDistance;
 };

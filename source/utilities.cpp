@@ -96,11 +96,8 @@ ParallelConfiguration LoadParallelConfiguration(std::string fileName)
     c.outputDirectory = root.get("output_directory", ".").asString();
     c.scratchDirectory = root.get("scratch_directory", ".").asString();
 
-    // Load the bin widths for i, j, and k
-    double dx = root["voxel_space"].get("dx", 1).asDouble();
-    double dy = root["voxel_space"].get("dy", 1).asDouble();
-    double dz = root["voxel_space"].get("dz", 1).asDouble();
-    c.binWidths = Vector3d(dx, dy, dz);
+    // Load the voxel width
+    c.voxelDistance = root.get("voxel_distance", 0.1).asDouble();
 
     // Load the thinning distance
     c.thinningDistance = root.get("thinning_distance", 0).asDouble();
@@ -157,7 +154,7 @@ void PrintConfigDetails(ParallelConfiguration& config, int prefixSpace)
 
     std::cout << padding << "output path:       " << config.outputDirectory << std::endl;
     std::cout << padding << "scratch path:       " << config.scratchDirectory << std::endl;
-    std::cout << padding << "voxel bin widths:  " << config.binWidths.Text() << std::endl;
+    std::cout << padding << "voxel bin widths:  " << config.voxelDistance << std::endl;
     std::cout << padding << "binning widths:    " << config.binningDistance << std::endl;
     std::cout << padding << "thinning distance: " << config.thinningDistance << std::endl;
 }
