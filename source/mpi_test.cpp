@@ -138,6 +138,8 @@ public:
 
         for (size_t i = 0; i < directory->numberOfWorkers(); i++)
             workers.push_back(false);
+
+        PrintConfigDetails(config, 14);
     }
 
     void run() override

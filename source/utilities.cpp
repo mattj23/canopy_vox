@@ -82,7 +82,7 @@ ParallelConfiguration LoadParallelConfiguration(std::string fileName)
 
     ParallelConfiguration c;
 
-    // Load the input file
+    // Load the input files from the "input_files" array
     Json::Value inputFiles = root["input_files"];
     if (!inputFiles.isArray())
         throw "Configuration input files are invalid array";
@@ -92,7 +92,9 @@ ParallelConfiguration LoadParallelConfiguration(std::string fileName)
         c.inputFiles.push_back(file.asString());
     }
 
-    c.outputFile = root.get("output_file", "default_output.asc").asString();
+    // Load the output path
+    c.outputDirectory = root.get("output_directory", ".").asString();
+    c.scratchDirectory = root.get("scratch_directory", ".").asString();
 
     // Load the bin widths for i, j, and k
     double dx = root["voxel_space"].get("dx", 1).asDouble();
@@ -100,15 +102,11 @@ ParallelConfiguration LoadParallelConfiguration(std::string fileName)
     double dz = root["voxel_space"].get("dz", 1).asDouble();
     c.binWidths = Vector3d(dx, dy, dz);
 
-    // Load the bin offsets for i, j, and k
-    double x0 = root["voxel_space"].get("x0", 0).asDouble();
-    double y0 = root["voxel_space"].get("y0", 0).asDouble();
-    double z0 = root["voxel_space"].get("z0", 0).asDouble();
-    c.binOffsets = Vector3d(x0, y0, z0);
-
     // Load the thinning distance
     c.thinningDistance = root.get("thinning_distance", 0).asDouble();
 
+    // Load the parallel binning distance
+    c.binningDistance = root.get("binning_distance", 5).asDouble();
     return c;
 }
 
@@ -157,8 +155,9 @@ void PrintConfigDetails(ParallelConfiguration& config, int prefixSpace)
         std::cout << padding << "input file:        " << v << std::endl;
     }
 
-    std::cout << padding << "output file:       " << config.outputFile << std::endl;
+    std::cout << padding << "output path:       " << config.outputDirectory << std::endl;
+    std::cout << padding << "scratch path:       " << config.scratchDirectory << std::endl;
     std::cout << padding << "voxel bin widths:  " << config.binWidths.Text() << std::endl;
-    std::cout << padding << "voxel bin offsets: " << config.binOffsets.Text() << std::endl;
+    std::cout << padding << "binning widths:    " << config.binningDistance << std::endl;
     std::cout << padding << "thinning distance: " << config.thinningDistance << std::endl;
 }
