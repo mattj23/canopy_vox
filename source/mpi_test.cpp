@@ -235,6 +235,8 @@ public:
     Reader(size_t id, size_t size, const ParallelConfiguration &configuration, std::shared_ptr<Directory> d)
     :Process(id, size, configuration, d)
     {
+        readerNumber = directory->readerFromRank(worldId);
+
         // Figure out which files this reader is supposed to read
         files = getMyFilesFromList(config.inputFiles);
     }
@@ -277,7 +279,7 @@ private:
     std::vector<std::string> files;
     std::unordered_map<size_t, std::vector<Vector3d>> transmitBuffers;
     std::hash<VoxelAddress> hasher;
-
+    size_t readerNumber;
     double sendBuffer[MAX_SEND_SIZE * 3];
 
     std::vector<std::string> getMyFilesFromList(std::vector<std::string> allFiles)
@@ -285,7 +287,7 @@ private:
         std::vector<std::string> v;
         for (size_t i = 0; i < allFiles.size(); i++)
         {
-            if (i % directory->numberOfReaders() == directory->readerFromRank(worldId))
+            if (i % directory->numberOfReaders() == readerNumber)
                 v.push_back(allFiles[i]);
         }
         return v;
@@ -308,8 +310,10 @@ private:
 
     void readBinaryFile(std::string fileName)
     {
-        std::cout << "Reader " << directory->readerFromRank(worldId) << " is processing " << fileName << std::endl;
+        transmitBuffers.clear();
 
+        size_t totalCount = 0;
+        std::cout << "Reader " << directory->readerFromRank(worldId) << " is processing " << fileName << std::endl;
         std::ifstream fileStream(fileName, std::ios::binary);
 
         double ix, iy, iz;
@@ -318,7 +322,7 @@ private:
             fileStream.read(reinterpret_cast<char *>(&iy), sizeof(iy));
             fileStream.read(reinterpret_cast<char *>(&iz), sizeof(iz));
             Vector3d v(ix, iy, iz);
-
+            totalCount++;
             VoxelAddress address = sorter->identify(ix, iy, iz);
 
             size_t worker = hasher(address) % directory->numberOfWorkers();
@@ -349,11 +353,14 @@ private:
                 pair.second.clear();
             }
         }
+        std::cout << "!! Reader " << readerNumber << " read " << totalCount << " points from file " << fileName << std::endl;
     }
 
     void readFile(std::string fileName)
     {
-        std::cout << "Reader " << directory->readerFromRank(worldId) << " is processing " << fileName << std::endl;
+        transmitBuffers.clear();
+
+        std::cout << "Reader " << readerNumber << " is processing " << fileName << std::endl;
 
         std::ifstream workingFile(fileName);
         std::string workingLine;
@@ -370,6 +377,7 @@ private:
             if (tokens.size() < 3)
                 continue;
 
+            count++;
             // Read the values in the text lines
             sx = std::stod(tokens[0]);
             sy = std::stod(tokens[1]);
@@ -395,8 +403,9 @@ private:
                 sendVectorsToWorker(worker, transmitBuffers[worker]);
                 transmitBuffers[worker].clear();
             }
-
         }
+
+        std::cout << "!! Reader " << readerNumber << " read " << count << " points total." << std::endl;
 
         // Clear the remaining transmit buffers
         for (auto pair : transmitBuffers)
@@ -416,7 +425,7 @@ public:
     Worker(size_t id, size_t size, const ParallelConfiguration &configuration, std::shared_ptr<Directory> d)
     :Process(id, size, configuration, d)
     {
-
+        workerNumber = directory->workerFromRank(worldId);
     }
 
     void run() override
@@ -436,8 +445,8 @@ public:
             thinRegion(pair.second);
         }
 
-        writeBinaryRegions(config.scratchDirectory + "worker" + std::to_string(directory->workerFromRank(worldId)) + ".binary");
-        std::cout << "Worker " << directory->workerFromRank(worldId) << " has thined " << rawData.size() << " regions" << std::endl;
+        writeBinaryRegions(config.scratchDirectory + "worker" + std::to_string(workerNumber) + ".binary");
+        std::cout << "Worker " << workerNumber << " has thined " << rawData.size() << " regions" << std::endl;
 
         // Write the intermediate files to the scratch directory
         // Tell the director that we're done
@@ -458,7 +467,7 @@ public:
             thinRegion(pair.second);
         }
 
-        std::cout << "Worker " << directory->workerFromRank(worldId) << " has thinned " << rawData.size() << " regions" << std::endl;
+        std::cout << "Worker " << workerNumber << " has thinned " << rawData.size() << " regions" << std::endl;
 
         // Perform the final voxelization
         VoxelSorter finalSorter(config.voxelDistance, config.voxelDistance, config.voxelDistance, 0, 0, 0);
@@ -473,7 +482,7 @@ public:
             }
         }
 
-        std::string outputFile = config.outputDirectory + "worker" + std::to_string(directory->workerFromRank(worldId)) + ".sparsevox";
+        std::string outputFile = config.outputDirectory + "worker" + std::to_string(workerNumber) + ".sparsevox";
         std::ofstream outfile;
         outfile.open(outputFile.c_str(), std::ios::out);
         for (auto voxel : voxels)
@@ -490,9 +499,12 @@ public:
 private:
     std::unordered_map<VoxelAddress, PointCloud> rawData;
     double recvBuffer[MAX_SEND_SIZE * 3];
+    size_t workerNumber;
 
     void receiveData()
     {
+        size_t totalRecv = 0;
+
         rawData.clear();
 
         MPI_Status status;
@@ -528,9 +540,13 @@ private:
                     if (mapIterator == rawData.end())
                         rawData[located.address] = PointCloud();
                     rawData[located.address].pts.push_back(v);
+
+                    totalRecv++;
                 }
             }
         }
+
+        std::cout << "!! Worker " << workerNumber << " received " << totalRecv << " points total" << std::endl;
     }
 
     void thinRegion(PointCloud &cloud)

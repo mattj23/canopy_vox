@@ -4,7 +4,7 @@
 // the program will do the rest.
 {
     "input_files": ["sample_data/AkinsStation1c.asc"],
-    "thinning_distance": 0.01,
+    "thinning_distance": 0.0,
     "scratch_directory": "/home/matt/voxel/scratch/",
     "output_directory": "/home/matt/voxel/output/",
     "binning_distance": 5,
