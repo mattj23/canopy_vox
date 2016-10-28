@@ -353,7 +353,6 @@ private:
                 pair.second.clear();
             }
         }
-        std::cout << "!! Reader " << readerNumber << " read " << totalCount << " points from file " << fileName << std::endl;
     }
 
     void readFile(std::string fileName)
@@ -405,8 +404,6 @@ private:
             }
         }
 
-        std::cout << "!! Reader " << readerNumber << " read " << count << " points total." << std::endl;
-
         // Clear the remaining transmit buffers
         for (auto pair : transmitBuffers)
         {
@@ -439,10 +436,10 @@ public:
         receiveData();
 
         // Do the thinning
+        size_t original = totalPoints();
         for (auto pair : rawData)
         {
-            size_t original = pair.second.size();
-            thinRegion(pair.second);
+            thinRegion(rawData[pair.first]);
         }
 
         writeBinaryRegions(config.scratchDirectory + "worker" + std::to_string(workerNumber) + ".binary");
@@ -461,10 +458,10 @@ public:
         receiveData();
 
         // Do the thinning
+        original = totalPoints();
         for (auto pair : rawData)
         {
-            size_t original = pair.second.size();
-            thinRegion(pair.second);
+            thinRegion(rawData[pair.first]);
         }
 
         std::cout << "Worker " << workerNumber << " has thinned " << rawData.size() << " regions" << std::endl;
@@ -493,7 +490,6 @@ public:
             count += voxel.second;
             outfile << voxel.first.i << "," << voxel.first.j << "," << voxel.first.k << "," << voxel.second << std::endl;
         }
-        std::cout << "!! Worker " << workerNumber << " sorted " << count << " points" << std::endl;
 
         // Tell the director we're done
         directory->sendToDirector(MessageInfo::workerDone);
@@ -505,6 +501,16 @@ private:
     std::unordered_map<VoxelAddress, PointCloud> rawData;
     double recvBuffer[MAX_SEND_SIZE * 3];
     size_t workerNumber;
+
+    size_t totalPoints()
+    {
+        size_t count = 0;
+        for (auto pair : rawData)
+        {
+            count += pair.second.size();
+        }
+        return count;
+    }
 
     void receiveData()
     {
@@ -551,7 +557,6 @@ private:
             }
         }
 
-        std::cout << "!! Worker " << workerNumber << " received " << totalRecv << " points total" << std::endl;
     }
 
     void thinRegion(PointCloud &cloud)

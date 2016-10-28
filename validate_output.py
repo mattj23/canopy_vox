@@ -19,7 +19,7 @@ def read_file(filename):
         for line in handle:
             chunks = line.strip().split(",")
             i, j, k = map(int, chunks[:3])
-            c = float(chunks[-1])
+            c = int(chunks[-1])
             voxels[(i, j, k)] = c
     return voxels
 
@@ -33,8 +33,14 @@ def main():
     voxels = map(read_file, files)
     produced = merge_dicts(*voxels)
 
-    print(sum_of(expected))
-    print(sum_of(produced))
+
+    print("Single process points:   {}".format(sum_of(expected)))
+    print("Parallel process points: {}".format(sum_of(produced)))
+
+    print("Single process voxels:   {}".format(len(expected)))
+    print("Parallel process voxels: {}".format(len(produced)))
+
+
 
 if __name__ == '__main__':
     main()
