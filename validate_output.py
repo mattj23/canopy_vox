@@ -40,7 +40,13 @@ def main():
     print("Single process voxels:   {}".format(len(expected)))
     print("Parallel process voxels: {}".format(len(produced)))
 
-
+    for k, v in expected.items():
+        if not k in produced:
+            print(" -- missing voxel {}".format(k))
+        else:
+            error = abs(v - produced[k])
+            if error > 3:
+                print(" -- voxel {} off by {}%".format(k, float(error) / v * 100))
 
 if __name__ == '__main__':
     main()
