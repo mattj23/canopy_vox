@@ -5,8 +5,8 @@ LTESTFLAGS= -lgtest -lpthread # Link flags for Google Testing Framework
 BIN=./bin/
 SRC=./source/
 
-mpi_test: $(SRC)mpi_test.cpp $(BIN)jsoncpp.o $(BIN)utilities.o $(BIN)vector3d.o $(BIN)pointcloud.o $(BIN)voxelsorter.o
-	$(MPICC) $(SRC)mpi_test.cpp $(BIN)jsoncpp.o $(BIN)utilities.o $(BIN)vector3d.o $(BIN)pointcloud.o $(BIN)voxelsorter.o -o $(BIN)mpi_test $(CFLAGS)
+mpi_voxels: $(SRC)mpi_voxels.cpp $(BIN)jsoncpp.o $(BIN)utilities.o $(BIN)vector3d.o $(BIN)pointcloud.o $(BIN)voxelsorter.o
+	$(MPICC) $(SRC)mpi_voxels.cpp $(BIN)jsoncpp.o $(BIN)utilities.o $(BIN)vector3d.o $(BIN)pointcloud.o $(BIN)voxelsorter.o -o $(BIN)mpi_test $(CFLAGS)
 
 kdtree_voxels: $(SRC)kdtree_voxels.cpp $(BIN)pointcloud.o $(BIN)vector3d.o $(BIN)utilities.o $(BIN)jsoncpp.o $(BIN)voxelsorter.o
 	$(CC) $(SRC)kdtree_voxels.cpp $(BIN)vector3d.o $(BIN)pointcloud.o $(BIN)utilities.o $(BIN)jsoncpp.o $(BIN)voxelsorter.o -o $(BIN)kdtree_voxels $(CFLAGS)

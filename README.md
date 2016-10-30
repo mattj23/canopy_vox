@@ -3,20 +3,28 @@
 ### Overview
 *Parallel computing voxel generator from LIDAR data*
 
-This code performs the voxelization of a very large volume of LIDAR points using a parallel algorithm and Open MPI.
+This code performs the thinning and voxelization of a very large volume of LIDAR points using a parallel algorithm and Open MPI.
 
 It was written for use on Georgia Southern University's TALON cluster.
 
 ### Current State
 There are currently several binaries in the project.
 
+1. mpi_voxels
+
+   This is the parallel MPI implementation of the thinning and voxelization algorithm.  A special parallel configuration input file must be specified as the command line argument.
+
 1. kdtree_voxels
 
-   This is a single threaded implementation of the thinning and voxelization algorithms that uses a 3 dimensional binary search tree (a k-d tree) to perform the spatial radius searches in O(n log n) time as opposed to the O(n^2) time of the naive implementation.  Takes a single .asc input file.  Works for point clouds up to a few million points.
+   This is a single threaded implementation of the thinning and voxelization algorithms that uses a 3 dimensional binary search tree (a k-d tree) to perform the spatial radius searches in O(n log n) time as opposed to the O(n^2) time of the naive implementation.  Takes a single .asc input file specified in a configuration .json file.  Works for point clouds up to a few million points.
 
 2. naive_voxels
 
    This is a naive, single threaded implementation of the thinning (elimination of redundant points within a specified distance) and voxelization algorithms that takes a single .asc input file.  It is very slow for point clouds over a few thousand points, and exists solely as an obviously correct method for validating the output of the other implementations.
+
+3. closest_point_check
+
+   This tool opens a .asc formatted point cloud file, specified as a command line argument, and searches every point in the file for its nearest neighbor.  The closest distance between any two points in the file is then printed to stdout.  The relevance of this value is that, for a single point cloud file, the closest distance between any two points is a good indication of the minimum point spacing of the LIDAR hardware used for a scan from a single position, and when several such scans are superimposed points which lie closer than this distance are effectively oversampling of surfaces in that area and will cause the density of that region to be artificially high.
 
 Configuration files are in the json format, and a sample `config.json` is included that points at the sample file `sample_data/sample.asc`.
 
@@ -24,7 +32,7 @@ Configuration files are in the json format, and a sample `config.json` is includ
 The parallel algorithm works as follows:
 1. The algorithm is invoked through MPI with a given number of processes.
 2. Processes self-assign based on the total MPI world size and the number of input files.
-   * Process #0 is always the Director
+   * Process 0 is always the Director
    * Up to 25% of the processes are allowed to become Readers.  There will always be at least one Reader, but never any more than the number of input files.
    * The remainder of the processes become Workers.
 3. Readers begin the process of reading the input files from disk.  As points are loaded they are sorted into working bins based on a large discretization of space (typically cubic meter or larger bins) thats length, width, and height dimensions are integer multiples of the final bin space, then shifted by half.  The worker assigned to each bin is deterministically calculated from a hash of the bin address, and the bins are assembled and the data transfered from the Readers to the Workers.
@@ -41,3 +49,4 @@ Testing is done with Google Test, and if the binaries are installed can be built
 1. **jsoncpp**, by Baptiste Lepilleur, used for parsing the json-formatted configuration files. (MIT license)
 2. **nanoflann**, by Jose Luis Blanco-Claraco, a k-d tree implementation used for distance searches within the point cloud, a fork of the FLANN project (BSD license)
 3. **googletest**, by Google, a unit testing framework used for testing the vector and voxel libraries
+4. **Open MPI*** a MPI impelmentation for C and C++

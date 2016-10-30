@@ -33,3 +33,6 @@ bin/*
 
 # Output and data files 
 *.asc
+
+# Pycharm stuff 
+.idea
