@@ -399,6 +399,8 @@ private:
             // Send the transmit buffer if it's ready
             if (transmitBuffers[worker].size() > MAX_SEND_SIZE - 1)
             {
+                if (config.debug) std::cout << "(DEBUG) Reader " << readerNumber << " transmitting points to worker " << worker << std::endl;
+                
                 sendVectorsToWorker(worker, transmitBuffers[worker]);
                 transmitBuffers[worker].clear();
             }
