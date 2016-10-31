@@ -146,6 +146,8 @@ public:
     Director(size_t id, size_t size, const ParallelConfiguration &configuration, std::shared_ptr<Directory> d)
     :Process(id, size, configuration, d)
     {
+        std::cout << "Director (process rank " << worldId << ") checking in" << std::endl;
+
         for (size_t i = 0; i < directory->numberOfReaders(); i++)
             readers.push_back(false);
 
@@ -236,6 +238,7 @@ public:
     :Process(id, size, configuration, d)
     {
         readerNumber = directory->readerFromRank(worldId);
+        std::cout << "Reader " << readerNumber << " (process rank " << worldId << ") checking in" << std::endl;
 
         // Figure out which files this reader is supposed to read
         files = getMyFilesFromList(config.inputFiles);
@@ -440,6 +443,9 @@ public:
     :Process(id, size, configuration, d)
     {
         workerNumber = directory->workerFromRank(worldId);
+
+        std::cout << "Worker " << workerNumber << " (process rank " << worldId << ") checking in" << std::endl;
+
     }
 
     void run() override
