@@ -10,6 +10,9 @@
 #include <memory>
 #include <unordered_map>
 
+#include <thread>
+#include <chrono>
+
 #include "nanoflann.hpp"
 #include "utilities.h"
 #include "vector3d.h"
@@ -147,6 +150,11 @@ public:
     :Process(id, size, configuration, d)
     {
         std::cout << "Director (process rank " << worldId << ") checking in" << std::endl;
+        std::cout << "  -> Total number of MPI processes: " << size << std::endl;
+        std::cout << "  -> Total number of Workers:       " << directory->numberOfWorkers() << std::endl;
+        std::cout << "  -> Total number of Readers:       " << directory->numberOfReaders() << std::endl;
+        std::cout << "  -> Configuration details: " << std::endl;
+        PrintConfigDetails(config, 14);
 
         for (size_t i = 0; i < directory->numberOfReaders(); i++)
             readers.push_back(false);
@@ -154,7 +162,6 @@ public:
         for (size_t i = 0; i < directory->numberOfWorkers(); i++)
             workers.push_back(false);
 
-        PrintConfigDetails(config, 14);
     }
 
     void run() override
@@ -237,6 +244,9 @@ public:
     Reader(size_t id, size_t size, const ParallelConfiguration &configuration, std::shared_ptr<Directory> d)
     :Process(id, size, configuration, d)
     {
+        // Delay this thread in order to let the Director print to stdout uninterrupted
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+
         readerNumber = directory->readerFromRank(worldId);
         std::cout << "Reader " << readerNumber << " (process rank " << worldId << ") checking in" << std::endl;
 
@@ -442,10 +452,11 @@ public:
     Worker(size_t id, size_t size, const ParallelConfiguration &configuration, std::shared_ptr<Directory> d)
     :Process(id, size, configuration, d)
     {
+        // Delay this thread in order to let the Director print to stdout uninterrupted
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+
         workerNumber = directory->workerFromRank(worldId);
-
         std::cout << "Worker " << workerNumber << " (process rank " << worldId << ") checking in" << std::endl;
-
     }
 
     void run() override
