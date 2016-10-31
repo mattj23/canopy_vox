@@ -364,6 +364,11 @@ private:
         std::ifstream workingFile(fileName);
         std::string workingLine;
 
+        if (!infile.good())
+        {
+            std::cout << "Reader " << readerNumber << " found that file " << fileName << " could not be read!" << std::endl;
+        }
+
         double sx, sy, sz;
 
         size_t count = 0;
@@ -378,6 +383,7 @@ private:
 
             count++;
             // Read the values in the text lines
+            if (config.debug) std::cout << "(DEBUG) Reader " << readerNumber << " converted floats " << sx << ", " << sy << ", " << sz << std::endl;
             sx = std::stod(tokens[0]);
             sy = std::stod(tokens[1]);
             sz = std::stod(tokens[2]);
@@ -400,7 +406,7 @@ private:
             if (transmitBuffers[worker].size() > MAX_SEND_SIZE - 1)
             {
                 if (config.debug) std::cout << "(DEBUG) Reader " << readerNumber << " transmitting points to worker " << worker << std::endl;
-                
+
                 sendVectorsToWorker(worker, transmitBuffers[worker]);
                 transmitBuffers[worker].clear();
             }
