@@ -6,6 +6,7 @@
 #include <fstream>
 #include <cmath>
 #include <set>
+#include <limits>
 
 #include "nanoflann.hpp"
 #include "vector3d.h"
@@ -43,14 +44,33 @@ int main(int argc, char* argv[])
     index.buildIndex();
     std::cout << "closest_point_check: index complete" << std::endl;
 
-    double minDistance;
+    double minDistanceSquared = std::numeric_limits<double>::max();
+    const size_t nResults = 5;
+    std::vector<size_t> resultIndex(nResults);
+    std::vector<double> distanceSquared(nResults);
+
     for (size_t i = 0; i < cloud.pts.size(); i++)
     {
+        // Construct the query point from the current point
         double query_pt[3] = { cloud.pts[i].x, cloud.pts[i].y, cloud.pts[i].z};
-        // find the nearest neighnor
 
+        // Search for the nResults nearest neighbors
+        index.knnSearch(&query_pt[0], nResults, &resultIndex[0], &distanceSquared[0]);
+
+        // Locate the smallest nonzero distance in the result set
+        double smallestInSet = std::numeric_limits<double>::max();
+        for (double d2 : distanceSquared)
+        {
+            if (d2 > 0 && d2 < smallestInSet)
+                smallestInSet = d2;
+        }
+
+        // If the smallest distace in the set is less than the smallest
+        // distance found so far, we update the smallest total distance
+        if (smallestInSet < minDistanceSquared)
+            minDistanceSquared = smallestInSet;
     }
 
-    std::cout << "closest_point_check: closest distance between points is " << minDistance << std::endl;
+    std::cout << "closest_point_check: closest distance between points is " << sqrt(minDistanceSquared) << std::endl;
     return 0;
 }

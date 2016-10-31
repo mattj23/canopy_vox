@@ -14,6 +14,10 @@ kdtree_voxels: $(SRC)kdtree_voxels.cpp $(BIN)pointcloud.o $(BIN)vector3d.o $(BIN
 naive_voxels: $(SRC)naive_voxels.cpp $(BIN)vector3d.o $(BIN)utilities.o $(BIN)jsoncpp.o $(BIN)voxelsorter.o
 	$(CC) $(SRC)naive_voxels.cpp $(BIN)vector3d.o $(BIN)utilities.o $(BIN)jsoncpp.o $(BIN)voxelsorter.o -o $(BIN)naive_voxels $(CFLAGS)
 
+closest_point_check: $(SRC)closest_point_check.cpp $(BIN)pointcloud.o $(BIN)vector3d.o $(BIN)utilities.o $(BIN)jsoncpp.o $(BIN)voxelsorter.o
+	$(CC) $(SRC)closest_point_check.cpp $(BIN)vector3d.o $(BIN)pointcloud.o $(BIN)utilities.o $(BIN)jsoncpp.o $(BIN)voxelsorter.o -o $(BIN)closest_point_check $(CFLAGS)
+
+
 $(BIN)pointcloud.o: $(SRC)pointcloud.h $(SRC)pointcloud.cpp $(BIN)vector3d.o
 	$(CC) $(SRC)pointcloud.cpp $(BIN)vector3d.o -c -o $(BIN)pointcloud.o $(CFLAGS)
 
