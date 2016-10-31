@@ -104,6 +104,8 @@ ParallelConfiguration LoadParallelConfiguration(std::string fileName)
 
     // Load the parallel binning distance
     c.binningDistance = root.get("binning_distance", 5).asDouble();
+
+    c.debug = root.get("debug", false).asBool();
     return c;
 }
 
@@ -157,4 +159,5 @@ void PrintConfigDetails(ParallelConfiguration& config, int prefixSpace)
     std::cout << padding << "voxel bin widths:  " << config.voxelDistance << std::endl;
     std::cout << padding << "binning widths:    " << config.binningDistance << std::endl;
     std::cout << padding << "thinning distance: " << config.thinningDistance << std::endl;
+    std::cout << padding << "debug output:      " << config.debug << std::endl;
 }

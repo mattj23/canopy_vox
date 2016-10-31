@@ -338,10 +338,10 @@ private:
             // Send the transmit buffer if it's ready
             if (transmitBuffers[worker].size() > MAX_SEND_SIZE - 1)
             {
+                if (config.debug) std::cout << "(DEBUG) Reader " << readerNumber << " transmitting points to worker " << worker << std::endl;
                 sendVectorsToWorker(worker, transmitBuffers[worker]);
                 transmitBuffers[worker].clear();
             }
-
         }
 
         // Clear the remaining transmit buffers
@@ -536,9 +536,12 @@ private:
             // Tag 1 means this is raw data
             else if (status.MPI_TAG == 1)
             {
+                if (config.debug) std::cout << "(DEBUG) Worker " << workerNumber << " preparing to recieve data" << std::endl;
                 int recvCount;
                 MPI_Get_count(&status, MPI_DOUBLE, &recvCount);
                 MPI_Recv(recvBuffer, recvCount, MPI_DOUBLE, MPI_ANY_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, &status);
+
+                if (config.debug) std::cout << "(DEBUG) Worker " << workerNumber << " recieved " << recvCount << " doubles" << std::endl;
 
                 // Unpack the buffer
                 for (size_t i = 0; i < recvCount; )

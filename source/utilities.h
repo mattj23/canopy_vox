@@ -42,6 +42,7 @@ struct ParallelConfiguration
     double voxelDistance;
     double binningDistance;
     double thinningDistance;
+    bool debug;
 };
 
 std::vector<Vector3d> LoadPointsFromFile(std::string fileName);
