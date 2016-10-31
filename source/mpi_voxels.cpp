@@ -395,6 +395,9 @@ private:
 
             if (config.debug) std::cout << "(DEBUG) Reader " << readerNumber << " sorted point " << v << " into address " << address << std::endl;
 
+            size_t h = hasher(address);
+            if (config.debug) std::cout << "(DEBUG) Reader " << readerNumber << " hashed address " << address << " to value " << h << std::endl;
+            
             size_t worker = hasher(address) % directory->numberOfWorkers();
             if (config.debug) std::cout << "(DEBUG) Reader " << readerNumber << " assigned point " << v << " to Worker " << worker << std::endl;
 
