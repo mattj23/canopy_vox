@@ -364,7 +364,7 @@ private:
         std::ifstream workingFile(fileName);
         std::string workingLine;
 
-        if (!infile.good())
+        if (!workingFile.good())
         {
             std::cout << "Reader " << readerNumber << " found that file " << fileName << " could not be read!" << std::endl;
         }
