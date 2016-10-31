@@ -383,16 +383,20 @@ private:
 
             count++;
             // Read the values in the text lines
-            if (config.debug) std::cout << "(DEBUG) Reader " << readerNumber << " converted floats " << sx << ", " << sy << ", " << sz << std::endl;
+            if (config.debug) std::cout << "(DEBUG) Reader " << readerNumber << " read tokens " << tokens[0] << ", " << tokens[1] << ", " << tokens[2] << std::endl;
             sx = std::stod(tokens[0]);
             sy = std::stod(tokens[1]);
             sz = std::stod(tokens[2]);
+            if (config.debug) std::cout << "(DEBUG) Reader " << readerNumber << " converted floats " << sx << ", " << sy << ", " << sz << std::endl;
 
             // Create the vector object and the voxel address
             Vector3d v(sx, sy, sz);
             VoxelAddress address = sorter->identify(sx, sy, sz);
 
+            if (config.debug) std::cout << "(DEBUG) Reader " << readerNumber << " sorted point " << v << " into address " << address << std::endl;
+
             size_t worker = hasher(address) % directory->numberOfWorkers();
+            if (config.debug) std::cout << "(DEBUG) Reader " << readerNumber << " assigned point " << v << " to Worker " << worker << std::endl;
 
             // Retrieve the transmit buffer for this worker
             auto mapIterator = transmitBuffers.find(worker);
