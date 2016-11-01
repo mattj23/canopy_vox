@@ -1,4 +1,10 @@
 #python3
+
+"""
+Configuration script for the parallel MPI algorithm, this script helps generate
+the configuration json file.
+"""
+
 import os
 import sys
 import json
@@ -20,7 +26,7 @@ def parse_json(json_target):
 
 def main():
 
-    
+
     json_target = get_json_argument()
     if json_target is None:
         return
