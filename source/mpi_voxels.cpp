@@ -21,18 +21,20 @@
 
 using namespace nanoflann;
 
-#define MAX_SEND_SIZE 100
+#define MAX_SEND_SIZE 100 // When the transmit buffers get to this size they send
+#define START_DELAY 1   // Number of seconds to delay non-director start
 
 enum class ProgramState {reading, thinning, reading2, thinning2, finalize};
 enum class MessageInfo {readerDone, workerDone, startWorking};
 enum class WorkerTypes {director, reader, worker};
 
-/* The Directory class takes the MPI world size and the configuration settings
-and from it computes the task assignments of all of the processes in the MPI
-world.  This is computed by each process in a deterministic way in order to
-eliminate an initial step of communication between processes.  Additionaly,
-the Directory class contains helper methods for addressing and communication
-between processes. */
+/// The Directory class takes the MPI world size and the configuration settings
+/// and from it computes the task assignments of all of the processes in the MPI
+/// world.  This is computed by each process in a deterministic way in order to
+/// eliminate an initial step of communication between processes.  Additionaly,
+/// the Directory class contains helper methods for addressing and communication
+/// between processes. Think of this as the phone book for inter-process
+/// communication.
 class Directory
 {
 public:
@@ -71,12 +73,16 @@ public:
     inline size_t readerFromRank(size_t rank) { return rank - 1; }
     inline size_t workerFromRank(size_t rank) { return rank - 1 - nReaders; }
 
+    /// Sends an administrative message to the Director process based on the
+    /// MessageInfo enum given
     void sendToDirector(MessageInfo info)
     {
         int messageCode = static_cast<int>(info);
         MPI_Send(&messageCode, 1, MPI_INT, director(), 0, MPI_COMM_WORLD);
     }
 
+    /// Intended for use by the Director process, sends a start signal to
+    /// the specified process number
     void tellProcessToStart(size_t processRank)
     {
         int messageCode = static_cast<int>(MessageInfo::startWorking);
@@ -87,9 +93,14 @@ protected:
     size_t nReaders;
     size_t nWorkers;
 
+    // This is an internal mapping of process number to type of role
     std::unordered_map<size_t, WorkerTypes> mapping;
 };
 
+
+/// An abstract class to serve as a base for the three different process roles,
+/// the Director, the Worker, and the Reader.  Contains an abstract method "run"
+// that gets called when the process is instantiated.
 class Process
 {
 public:
@@ -113,7 +124,10 @@ protected:
     std::shared_ptr<Directory> directory;
     std::unique_ptr<VoxelSorter> sorter;
 
-    void setSorter(bool isShifted)
+    /// Initializes the process' internal VoxelSorter with the information from
+    /// the configuration object and a flag that determines whether the bins
+    /// are shifted by half of the bin spacing (used in the initial sorting step)
+    void initializeSorter(bool isShifted)
     {
         int mult = 0;
         while (config.voxelDistance * ++mult < config.binningDistance);
@@ -125,6 +139,8 @@ protected:
             sorter.reset(new VoxelSorter(dv, dv, dv, 0, 0, 0));
     }
 
+    /// Blocks the process thread until an MPI communication is recieved with a
+    /// MessageInfo::startWorking signal.
     void waitForStartInstruction()
     {
         int rawMessageCode;
@@ -143,6 +159,11 @@ protected:
     }
 };
 
+/// The Director process controls the entire algorithm, and serves as a relay
+/// point for synchronizing actions between the different processes. The
+/// Director's primary task is to track when all Readers or Workers are done
+/// with a particular stage of work and signal to all of the processes to
+/// begin the next step.
 class Director: public Process
 {
 public:
@@ -257,7 +278,7 @@ public:
     void run() override
     {
         // Construct the first stage voxel sorter
-        setSorter(true);
+        initializeSorter(true);
 
         // Start with reading and transmitting all of the files
         for (auto f : files)
@@ -270,7 +291,7 @@ public:
         waitForStartInstruction();
 
         // Reset the sorter to the unshifted position or the second stage
-        setSorter(false);
+        initializeSorter(false);
 
         // There should be one scratch file per worker
         std::vector<std::string> scratchFiles;
@@ -462,7 +483,7 @@ public:
     void run() override
     {
         // Construct the first stage voxel sorter
-        setSorter(true);
+        initializeSorter(true);
 
         // Wait for incoming data: if it's from the readers add it to our local
         // buffers and sort it into place, if it's from the Director start
@@ -484,7 +505,7 @@ public:
         directory->sendToDirector(MessageInfo::workerDone);
 
         // Reset the sorter to the second stage position
-        setSorter(false);
+        initializeSorter(false);
 
         // Wait for incoming data: if it's from the readers add it to our local
         // buffers and sort it into place, if it's from the Director start
