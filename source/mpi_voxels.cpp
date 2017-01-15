@@ -248,7 +248,7 @@ private:
             {
                 while (std::getline(infile, line))
                 {
-                    outputFile << line;
+                    outputFile << line << std::endl;
                 }
             }
             infile.close();
