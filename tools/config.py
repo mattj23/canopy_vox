@@ -10,7 +10,7 @@ usage:
     json argument: a configuration json file to alter with the .pts files
                    specified in folder argument
 
-    folder argument: a folder path that contains the pts files to add to the
+    folder argument: a folder path that contains the .pts files to add to the
                      configuration
 """
 
@@ -67,7 +67,7 @@ def main():
     json_data["input_files"] = input_files
 
     print(json.dumps(json_data, indent=4))
-    
+
 
 if __name__ == '__main__':
     main()
