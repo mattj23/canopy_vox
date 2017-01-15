@@ -220,11 +220,42 @@ public:
         std::cout << "Director has confirmed that all workers have finished stage 2 thinning and sorting" << std::endl;
         std::cout << "Director reports that the run is now complete" << std::endl;
 
+        // Combine the files
     }
 
 private:
     std::vector<bool> readers;
     std::vector<bool> workers;
+
+    void combineResults()
+    {
+        std::string outputFileName = "combined_results.sparsevox";
+        std::string line;
+        std::ofstream outputFile(outputFileName);
+        if (!outputFile.is_open())
+        {
+            std::cout << "Error opening file " << outputFileName << " for output!" << std::endl;
+            return;
+        }
+
+        for (size_t i = 0; i < directory->numberOfWorkers(); i++)
+        {
+            std::string readFileName = config.scratchDirectory + "worker" + std::to_string(i) + "_final.sparsevox";
+            std::cout << "Director is combining results from " << readFileName << std::endl;
+            std::ifstream infile(readFileName);
+            if (infile.is_open())
+            {
+                while (std::getline(infile, line))
+                {
+                    outputFile << line;
+                }
+            }
+            infile.close();
+            std::remove(readFileName.c_str());
+        }
+
+        outputFile.close();
+    }
 
     bool areDone(const std::vector<bool> &vectorOfBools)
     {
@@ -395,7 +426,9 @@ private:
             }
         }
 
-        // Delete the binary file
+        // Delete the binary file when we're done with it
+        std::cout << name() << " is deleting " << fileName << std::endl;
+        std::remove(fileName.c_str());
     }
 
     void readFile(std::string fileName)
@@ -546,8 +579,7 @@ public:
             }
         }
 
-
-        std::string outputFile = config.outputDirectory + "worker" + std::to_string(workerNumber) + ".sparsevox";
+        std::string outputFile = config.scratchDirectory + "worker" + std::to_string(workerNumber) + "_final.sparsevox";
         std::ofstream outfile;
         outfile.open(outputFile.c_str(), std::ios::out);
 
@@ -559,13 +591,12 @@ public:
 
         // Tell the director we're done
         directory->sendToDirector(MessageInfo::workerDone);
-
-
     }
 
 private:
     std::unordered_map<VoxelAddress, PointCloud> rawData;
     double recvBuffer[MAX_SEND_SIZE * 3];
+
     size_t workerNumber;
 
     size_t totalPoints()

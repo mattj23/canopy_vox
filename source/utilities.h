@@ -37,7 +37,6 @@ struct Configuration
 struct ParallelConfiguration
 {
     std::vector<std::string> inputFiles;
-    std::string outputDirectory;
     std::string scratchDirectory;
     double voxelDistance;
     double binningDistance;

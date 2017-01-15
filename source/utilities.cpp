@@ -93,7 +93,6 @@ ParallelConfiguration LoadParallelConfiguration(std::string fileName)
     }
 
     // Load the output path
-    c.outputDirectory = root.get("output_directory", ".").asString();
     c.scratchDirectory = root.get("scratch_directory", ".").asString();
 
     // Load the voxel width
@@ -154,7 +153,6 @@ void PrintConfigDetails(ParallelConfiguration& config, int prefixSpace)
         std::cout << padding << "input file:        " << v << std::endl;
     }
 
-    std::cout << padding << "output path:       " << config.outputDirectory << std::endl;
     std::cout << padding << "scratch path:       " << config.scratchDirectory << std::endl;
     std::cout << padding << "voxel bin widths:  " << config.voxelDistance << std::endl;
     std::cout << padding << "binning widths:    " << config.binningDistance << std::endl;
