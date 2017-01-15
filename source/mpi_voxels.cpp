@@ -9,6 +9,7 @@
 #include <iterator>
 #include <memory>
 #include <unordered_map>
+#include <cstdio>
 
 #include <thread>
 #include <chrono>
@@ -116,6 +117,8 @@ public:
 
     virtual void run() = 0;
 
+    virtual std::string name() = 0;
+
 protected:
     size_t worldId;
     size_t worldSize;
@@ -184,6 +187,8 @@ public:
             workers.push_back(false);
 
     }
+
+    std::string name() override { return "Director"; }
 
     void run() override
     {
@@ -274,6 +279,8 @@ public:
         // Figure out which files this reader is supposed to read
         files = getMyFilesFromList(config.inputFiles);
     }
+
+    std::string name() override { return "Reader " + std::to_string(directory->readerFromRank(worldId)); }
 
     void run() override
     {
@@ -387,6 +394,8 @@ private:
                 pair.second.clear();
             }
         }
+
+        // Delete the binary file
     }
 
     void readFile(std::string fileName)
@@ -479,6 +488,8 @@ public:
         workerNumber = directory->workerFromRank(worldId);
         std::cout << "Worker " << workerNumber << " (process rank " << worldId << ") checking in" << std::endl;
     }
+
+    std::string name() override { return "Worker " + std::to_string(directory->workerFromRank(worldId)); }
 
     void run() override
     {
