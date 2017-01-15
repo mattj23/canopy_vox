@@ -221,6 +221,7 @@ public:
         std::cout << "Director reports that the run is now complete" << std::endl;
 
         // Combine the files
+        combineResults();
     }
 
 private:
