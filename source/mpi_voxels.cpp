@@ -126,6 +126,7 @@ protected:
     ProgramState programState;
     std::shared_ptr<Directory> directory;
     std::unique_ptr<VoxelSorter> sorter;
+    double dv;
 
     /// Initializes the process' internal VoxelSorter with the information from
     /// the configuration object and a flag that determines whether the bins
@@ -134,7 +135,7 @@ protected:
     {
         int mult = 0;
         while (config.voxelDistance * ++mult < config.binningDistance);
-        double dv = config.voxelDistance * mult;
+        dv = config.voxelDistance * mult;
         // std::cout << "  grouping distance = " << dv << std::endl;
         if (isShifted)
             sorter.reset(new VoxelSorter(dv, dv, dv, dv/2.0, dv/2.0, dv/2.0));
@@ -238,6 +239,13 @@ private:
             std::cout << "Error opening file " << outputFileName << " for output!" << std::endl;
             return;
         }
+
+        // Write the heading information
+        outputFile << "[info]" << std::endl;
+        outputFile << "spacing=" << config.voxelDistance << std::endl;
+        outputFile << "thinning=" << config.thinningDistance << std::endl;
+        outputFile << "binning=" << dv << std::endl;
+        outputFile << "[voxels]" << std::endl;
 
         for (size_t i = 0; i < directory->numberOfWorkers(); i++)
         {
