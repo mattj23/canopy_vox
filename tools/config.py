@@ -25,7 +25,7 @@ def get_folder_argument():
         print("config.py: you need to specify a valid directory with point files")
         return None
 
-    input_files = [os.path.join(folders[0], x) for x in os.listdir(folders[0]) if x.endswith(".pts")]
+    input_files = [os.path.join(folders[0], x) for x in os.listdir(folders[0]) if x.endswith(".pts") or x.endswith(".asc")]
     return input_files
 
 def get_json_argument():
