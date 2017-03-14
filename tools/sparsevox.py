@@ -60,5 +60,17 @@ class SparseVoxels:
                     except:
                         pass
 
+    def __iter__(self):
+        """
+
+        :rtype: Voxel
+        :return:
+        """
+        for x in self.voxels:
+            yield x
+
+    def __len__(self):
+        return len(self.voxels)
+
     def __repr__(self):
         return "<SparseVoxels - n={}>".format(len(self.voxels))

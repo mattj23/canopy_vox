@@ -1,3 +1,6 @@
+# Python
+*.pyc
+
 # Compiled Object files
 *.slo
 *.lo
@@ -33,6 +36,7 @@ bin/*
 
 # Output and data files 
 *.asc
+*.png
 
 # Pycharm stuff 
 .idea
