@@ -29,11 +29,24 @@ def load_plot_file(file_name):
                 continue
     return zip(*points)
 
+
+def validate_bounds(bound_text):
+    try:
+        parts = bound_text.split(",")
+        elements = [float(p) for p in parts]
+        return elements[0], elements[1]
+    except:
+        return None
+
+
 def main():
     parser = argparse.ArgumentParser(description="Plots the top-down view of the voxel densities for a summary file")
     parser.add_argument("file", help="The .sparsevox file to process")
     parser.add_argument("output", help="The name of the png to output")
     parser.add_argument("--gages", action="store", dest="gages", help="A file to plot green circles at")
+    parser.add_argument("-x", action="store", dest="x", help="The site's x bounds")
+    parser.add_argument("-y", action="store", dest="y", help="The site's y bounds")
+
     args = parser.parse_args()
 
     # Load the voxels from the file
@@ -71,22 +84,27 @@ def main():
     x_axis = [(j_0 + i) * voxels.spacing for i in range(j_max - j_0)]
 
     # Plot the data
-    color_scale = [
-        [0, 'rgb(255,255,255)'],
-        [0.1, 'rgb(50, 50, 50)'],
-        [1.0, 'rgb(0,0,0)']
-    ]
-
+    color_scale = [ [0, 'rgb(255,255,255)'], [0.1, 'rgb(50, 50, 50)'], [1.0, 'rgb(0,0,0)'] ]
     heat_trace = go.Heatmap(z=image, x=x_axis, y=y_axis, colorscale=color_scale)
 
+    # Check if we want to plot gages
     if os.path.exists(args.gages):
-        gage_x, gage_y = load_plot_file(args.gages)
+        gage_y, gage_x = load_plot_file(args.gages)
         gage_trace = go.Scatter(x=gage_x, y=gage_y, mode="markers")
         plot_data = [heat_trace, gage_trace]
     else:
         plot_data = [heat_trace]
-    layout = go.Layout(title="Voxel Field", xaxis={"showgrid": True}, yaxis={"showgrid": True})
-    plot(go.Figure(data=plot_data, layout=layout), "test")
+
+    # Check if we want to plot bounds
+    x_bounds = validate_bounds(args.x)
+    y_bounds = validate_bounds(args.y)
+    if x_bounds and y_bounds:
+        site_boundary = {"type": "rect", "x0": x_bounds[0], "x1": x_bounds[1], "y0": y_bounds[0], "y1": y_bounds[1], "line":{"color": "rgba(128, 0, 128, 1)"}}
+        shapes = [site_boundary]
+    else:
+        shapes = []
+    layout = go.Layout(title="Voxel Field", xaxis={"showgrid": True}, yaxis={"showgrid": True}, shapes=shapes)
+    plot(go.Figure(data=plot_data, layout=layout), args.output)
     #
     # # Plot any files
     # if os.path.exists(args.plot_green):

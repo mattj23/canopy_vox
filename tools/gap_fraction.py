@@ -6,7 +6,6 @@
 
 import numpy
 import argparse
-import matplotlib.pyplot as plt
 
 try:
     from sparsevox import SparseVoxels
@@ -67,6 +66,7 @@ def main():
     # Construct the columns
     for voxel in voxels:
         if voxel.i >= i0 and voxel.i <= i1 and voxel.j >= j0 and voxel.j <= j1:
+            count += 1
             key = (voxel.i, voxel.j)
             if key in columns:
                 columns[key].append(voxel.v)
