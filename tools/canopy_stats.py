@@ -126,17 +126,30 @@ def main():
     gap_fraction = 1 - (len(voxel_columns) / float(total_columns))
 
     # Calculate density per layer
-    
-    densities = [(z, len(v) / float(total_columns)) for z, v in voxel_layers.items()]
-    densities.sort()
+    layer_densities = []
+    layer_stats = []
+    for z, cells in voxel_layers.items():
+        layer_densities.append((z, len(cells) / float(total_columns)))
+        a = numpy.array([v.v for v in cells])
+        layer_stats.append((z, a.sum(), a.mean(), a.std()))
+
+    layer_densities.sort()
+    layer_stats.sort()
     with open('z-layer-density.csv', "w") as handle:
-        handle.writelines(["{}, {}m, {:.6f}".format(z, z * voxels.spacing, density) for z, density in densities])
+        handle.write("\n".join(["z layer index (k), z height, layer density"] +
+                               ["{}, {:.3f} m, {:.6f}".format(z, z * voxels.spacing, density) for z, density in layer_densities]))
+
+    stat_output = ["z layer index (k), z height, total points, mean points, sdev points"]
+    for z, z_sum, z_mean, z_std in layer_stats:
+        stat_output.append("{}, {:.3f} m, {}, {:.6f}, {:.6f}".format(z, z * voxels.spacing, z_sum, z_mean, z_std))
+    with open('z-layer-stats.csv', 'w') as handle:
+        handle.write("\n".join(stat_output))
 
     # Print canopy statistics
     print("\nCanopy structural metrics")
     print(" -> Gap fraction = {}".format(gap_fraction))
     print(" -> Density by z layer saved to 'z-layer-density.csv'")
-
+    print(" -> Stats by z layer saved to 'z-layer-stats.csv'")
 
 
 if __name__ == '__main__':
