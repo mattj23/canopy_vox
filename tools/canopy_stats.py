@@ -77,6 +77,8 @@ def main():
     print("\nFile Summary")
     print(" -> Total nonzero cells in cloud = {}".format(len(voxels)))
     print(" -> Each cell represents a {:.2f}m cube".format(voxels.spacing))
+    print(" -> Cloud i-index range = {} to {}".format(voxels.i_min, voxels.i_max))
+    print(" -> Cloud j-index range = {} to {}".format(voxels.j_min, voxels.j_max))
 
     i0 = int(x0 / voxels.spacing)
     i1 = int(x1 / voxels.spacing)

@@ -75,13 +75,13 @@ def main():
     print("j_0, j_max = {}, {} ({:.2f}m to {:.2f}m)".format(j_0, j_max, j_0 * voxels.spacing, j_max * voxels.spacing))
 
     # Build the image array
-    image = numpy.zeros(shape=(i_max-i_0+1, j_max-j_0+1))
+    image = numpy.zeros(shape=(j_max-j_0+1, i_max-i_0+1))
     for voxel in voxels:
-        image[voxel.i-i_0, voxel.j-j_0] += voxel.v
+        image[voxel.j-j_0, voxel.i-i_0] += voxel.v
     intensity_max = (image.max() * 0.5)
 
-    y_axis = [(i_0 + i) * voxels.spacing for i in range(i_max - i_0)]
-    x_axis = [(j_0 + i) * voxels.spacing for i in range(j_max - j_0)]
+    x_axis = [(i_0 + i) * voxels.spacing for i in range(i_max - i_0)]
+    y_axis = [(j_0 + i) * voxels.spacing for i in range(j_max - j_0)]
 
     # Plot the data
     color_scale = [ [0, 'rgb(255,255,255)'], [0.1, 'rgb(50, 50, 50)'], [1.0, 'rgb(0,0,0)'] ]

@@ -40,7 +40,10 @@ class SparseVoxels:
     def __init__(self, **kwargs):
         self.voxels = []
         self.spacing = 1
-
+        self.i_min = None
+        self.j_min = None
+        self.i_max = None
+        self.j_max = None
         file_name = kwargs.get("file", None)
 
         if file_name is not None:
@@ -56,7 +59,17 @@ class SparseVoxels:
                 if len(parts) == 4:
                     try:
                         values = [int(x) for x in parts]
-                        self.voxels.append(Voxel(*values))
+                        vox = Voxel(*values)
+                        self.voxels.append(vox)
+                        if self.i_min is None or vox.i < self.i_min:
+                            self.i_min = vox.i
+                        if self.i_max is None or vox.i > self.i_max:
+                            self.i_max = vox.i
+                        if self.j_min is None or vox.j < self.j_min:
+                            self.j_min = vox.j
+                        if self.j_max is None or vox.j > self.j_max:
+                            self.j_max = vox.j
+
                     except:
                         pass
 
