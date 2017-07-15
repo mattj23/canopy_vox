@@ -98,12 +98,11 @@ def main():
     count = 0
     voxel_columns = {}
     voxel_layers = {}
-    image = numpy.zeros(shape=(i1 - i0 + 1, j1 - j0 + 1))
+    image = numpy.zeros(shape=(j1 - j0 + 1, i1 - i0 + 1))
 
     for voxel in voxels:
         if i0 <= voxel.i <= i1 and j0 <= voxel.j <= j1:
             count += 1
-            image[voxel.i - i0, voxel.j - j0] += voxel.v
 
             # Place this voxel in its column index
             column_key = (voxel.i, voxel.j)
@@ -123,20 +122,21 @@ def main():
     print(" -> Columns with non-zero values = {}".format(len(voxel_columns)))
     print(" -> Layers with non-zero values = {}".format(len(voxel_layers)))
 
-    # Plot
-    intensity_max = (image.max() * 0.5)
-    color_scale = [[0, 'rgb(255,255,255)'], [0.1, 'rgb(50, 50, 50)'], [1.0, 'rgb(0,0,0)']]
-    heat_trace = go.Heatmap(z=image, colorscale=color_scale)
-    plot_data = [heat_trace]
-    shapes = []
-    layout = go.Layout(title="Voxel Field", xaxis={"showgrid": True}, yaxis={"showgrid": True}, shapes=shapes)
-    plot(go.Figure(data=plot_data, layout=layout), "temp.html")
-
-
-
     # Calculate gap fraction
     gap_fraction = 1 - (len(voxel_columns) / float(total_columns))
-    print("Gap fraction = {}".format(gap_fraction))
+
+    # Calculate density per layer
+    
+    densities = [(z, len(v) / float(total_columns)) for z, v in voxel_layers.items()]
+    densities.sort()
+    with open('z-layer-density.csv', "w") as handle:
+        handle.writelines(["{}, {}m, {:.6f}".format(z, z * voxels.spacing, density) for z, density in densities])
+
+    # Print canopy statistics
+    print("\nCanopy structural metrics")
+    print(" -> Gap fraction = {}".format(gap_fraction))
+    print(" -> Density by z layer saved to 'z-layer-density.csv'")
+
 
 
 if __name__ == '__main__':
