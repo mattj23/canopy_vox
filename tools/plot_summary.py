@@ -88,7 +88,7 @@ def main():
     heat_trace = go.Heatmap(z=image, x=x_axis, y=y_axis, colorscale=color_scale)
 
     # Check if we want to plot gages
-    if os.path.exists(args.gages):
+    if args.gages is not None and os.path.exists(args.gages):
         gage_y, gage_x = load_plot_file(args.gages)
         gage_trace = go.Scatter(x=gage_x, y=gage_y, mode="markers")
         plot_data = [heat_trace, gage_trace]
