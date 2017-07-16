@@ -17,7 +17,7 @@ import plotly.graph_objs as go
 import sys
 
 from tools.sparsevox import SparseVoxels
-from tools.lacunarity import Bounds, create_layer
+import tools.lacunarity as lacunarity
 
 
 def validate_bounds(bound_text):
@@ -144,9 +144,10 @@ def main():
         handle.write("\n".join(stat_output))
 
     # Calculate lacunarity
-    bounds = Bounds(i0=i0, i1=i1, j0=j0, j1=j1)
-    layer = create_layer(bounds, voxel_layers)
+    bounds = lacunarity.Bounds(i0=i0, i1=i1, j0=j0, j1=j1)
+    layer = lacunarity.create_layer(bounds, voxel_layers)
     
+
 
     # Print canopy statistics
     print("\nCanopy structural metrics")
