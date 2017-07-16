@@ -34,6 +34,14 @@ def quit_on_error():
     sys.exit()
 
 
+def save_lacunarity_file(filename, data):
+    output = ["window size, lacunarity"]
+    for v in sorted(data):
+        output.append("{}, {:.6f}".format(*v))
+    with open(filename, "w") as handle:
+        handle.write("\n".join(output))
+
+
 def main():
     print("\nCanopy structural metrics processor")
     print("===========================================")
@@ -65,6 +73,7 @@ def main():
     y0 = min(y_bounds)
     y1 = max(y_bounds)
 
+    file_heading = os.path.basename(args.file).split(".sparsevox")[0]
     print("Processing file {}".format(args.file))
     print(" -> X bounding = {:.2f}m to {:.2f}m".format(x0, x1))
     print(" -> Y bounding = {:.2f}m to {:.2f}m".format(y0, y1))
@@ -133,28 +142,47 @@ def main():
 
     layer_densities.sort()
     layer_stats.sort()
-    with open('z-layer-density.csv', "w") as handle:
+    output_files = {"z-density": "{}-z-layer-density.csv".format(file_heading),
+                    "z-stats": "{}-z-layer-stats.csv".format(file_heading),
+                    "lacunarity": "{}-lacunarity.csv".format(file_heading)
+                    }
+    with open(output_files['z-density'], "w") as handle:
         handle.write("\n".join(["z layer index (k), z height, layer density"] +
                                ["{}, {:.3f} m, {:.6f}".format(z, z * voxels.spacing, density) for z, density in layer_densities]))
 
     stat_output = ["z layer index (k), z height, total points, mean points, sdev points"]
     for z, z_sum, z_mean, z_std in layer_stats:
         stat_output.append("{}, {:.3f} m, {}, {:.6f}, {:.6f}".format(z, z * voxels.spacing, z_sum, z_mean, z_std))
-    with open('z-layer-stats.csv', 'w') as handle:
+    with open(output_files['z-stats'], 'w') as handle:
         handle.write("\n".join(stat_output))
+
 
     # Calculate lacunarity
     bounds = lacunarity.Bounds(i0=i0, i1=i1, j0=j0, j1=j1)
     layer = lacunarity.create_layer(bounds, voxel_layers)
-    
+    save_lacunarity_file(output_files['lacunarity'], lacunarity.lacunarity_curve(bounds, layer))
 
+    lower_height = 0.0
+    height_range = 5.0 # meters
+    lac_files = []
+    while lower_height + height_range <= 25.0:
+        upper_k = (lower_height + height_range) / voxels.spacing
+        lower_k = lower_height / voxels.spacing
+        bounds = lacunarity.Bounds(i0=i0, i1=i1, j0=j0, j1=j1, k0=lower_k, k1=upper_k)
+        layer = lacunarity.create_layer(bounds, voxel_layers)
+        file_name = "{}-{}m-{}m-lacunarity.csv".format(file_heading, lower_height, lower_height + height_range)
+        save_lacunarity_file(file_name, lacunarity.lacunarity_curve(bounds, layer))
+        lac_files.append((lower_height, lower_height + height_range, file_name))
+        lower_height += height_range
 
     # Print canopy statistics
     print("\nCanopy structural metrics")
     print(" -> Gap fraction = {}".format(gap_fraction))
-    print(" -> Density by z layer saved to 'z-layer-density.csv'")
-    print(" -> Stats by z layer saved to 'z-layer-stats.csv'")
-
+    print(" -> Density by z layer saved to '{z-density}'".format(**output_files))
+    print(" -> Stats by z layer saved to '{z-stats}'".format(**output_files))
+    print(" -> Global lacunarity saved to '{lacunarity}'".format(**output_files))
+    for x in lac_files:
+        print(" -> Lacunarity between {}m and {}m saved to '{}'".format(*x))
 
 if __name__ == '__main__':
     main()

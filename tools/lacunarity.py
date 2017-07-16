@@ -15,10 +15,32 @@ class Bounds:
 
     @property
     def array_shape(self):
-        return (self.j1 - self.j0 + 1, self.i1 - self.i0 + 1)
+        return self.j_span, self.i_span
 
     def is_in_k_range(self, k):
         return (self.k0 is None or k >= self.k0) and (self.k1 is None or k <= self.k1)
+
+    @property
+    def i_span(self):
+        return self.i1 - self.i0 + 1
+
+    @property
+    def j_span(self):
+        return self.j1 - self.j0 + 1
+
+    @property
+    def window_sizes(self):
+        """
+        Calculate the window sizes as powers of 2 until we exceed the minimum dimension of the bounds
+        :return: list of valid window sizes
+        """
+        min_dimension = min(self.array_shape)
+        sizes = []
+        size = 2
+        while size < min_dimension:
+            sizes.append(size)
+            size = size * 2
+        return sizes
 
 
 def create_layer(bounds, voxel_layers):
@@ -85,6 +107,21 @@ def lacuniarity_quick(window_size, layer):
     return sites.var() / (sites.mean()**2) + 1
 
 
+def lacunarity_curve(bounds, layer):
+    """
+    Calculate the lacunarity curve, where window sizes are in powers of 2 up until the minimum dimension of the layer
+    and the layer is a 2d binary numpy array representing the region to process
+    :type layer: numpy.array
+    :type bounds: Bounds
+    :rtype: list
+    :param bounds: Bounds object which created the layer
+    :param layer: binary numpy.array representing the region to process
+    :return: a list of tuples where the first element is the window size and the second element is the lacunarity
+    """
+    results = []
+    for window_size in bounds.window_sizes:
+        results.append((window_size, lacunarity(window_size, layer)))
+    return results
 
 if __name__ == '__main__':
     test = """1010000011
