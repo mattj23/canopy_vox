@@ -16,10 +16,8 @@ import plotly.graph_objs as go
 
 import sys
 
-try:
-    from sparsevox import SparseVoxels
-except:
-    from tools.sparsevox import SparseVoxels
+from tools.sparsevox import SparseVoxels
+from tools.lacunarity import Bounds, create_layer
 
 
 def validate_bounds(bound_text):
@@ -125,7 +123,7 @@ def main():
     # Calculate gap fraction
     gap_fraction = 1 - (len(voxel_columns) / float(total_columns))
 
-    # Calculate density per layer
+    # Calculate density per layer and z-layer statistics
     layer_densities = []
     layer_stats = []
     for z, cells in voxel_layers.items():
@@ -144,6 +142,11 @@ def main():
         stat_output.append("{}, {:.3f} m, {}, {:.6f}, {:.6f}".format(z, z * voxels.spacing, z_sum, z_mean, z_std))
     with open('z-layer-stats.csv', 'w') as handle:
         handle.write("\n".join(stat_output))
+
+    # Calculate lacunarity
+    bounds = Bounds(i0=i0, i1=i1, j0=j0, j1=j1)
+    layer = create_layer(bounds, voxel_layers)
+    
 
     # Print canopy statistics
     print("\nCanopy structural metrics")
