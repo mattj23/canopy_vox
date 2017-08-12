@@ -78,13 +78,13 @@ def main():
     image = numpy.zeros(shape=(j_max-j_0+1, i_max-i_0+1))
     for voxel in voxels:
         image[voxel.j-j_0, voxel.i-i_0] += voxel.v
-    intensity_max = (image.max() * 0.5)
+    image = image.clip(0, 5000)
 
     x_axis = [(i_0 + i) * voxels.spacing for i in range(i_max - i_0)]
     y_axis = [(j_0 + i) * voxels.spacing for i in range(j_max - j_0)]
 
     # Plot the data
-    color_scale = [ [0, 'rgb(255,255,255)'], [0.1, 'rgb(50, 50, 50)'], [1.0, 'rgb(0,0,0)'] ]
+    color_scale = [ [0, 'rgb(255,255,255)'], [0.5, 'rgb(50, 50, 50)'], [1.0, 'rgb(0,0,0)'] ]
     heat_trace = go.Heatmap(z=image, x=x_axis, y=y_axis, colorscale=color_scale)
 
     # Check if we want to plot gages

@@ -1,7 +1,10 @@
 #python3
 
 import numpy
-from tools.sparsevox import Voxel
+try:
+    from sparsevox import SparseVoxels
+except:
+    from tools.sparsevox import SparseVoxels
 
 
 class Bounds:

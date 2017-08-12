@@ -16,8 +16,12 @@ import plotly.graph_objs as go
 
 import sys
 
-from tools.sparsevox import SparseVoxels
-import tools.lacunarity as lacunarity
+try:
+    from sparsevox import SparseVoxels
+    import lacunarity
+except:
+    from tools.sparsevox import SparseVoxels
+    import tools.lacunarity as lacunarity
 
 
 def validate_bounds(bound_text):
