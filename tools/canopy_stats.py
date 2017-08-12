@@ -165,7 +165,7 @@ def main():
     lower_height = 0.0
     height_range = 5.0 # meters
     lac_files = []
-    while lower_height + height_range <= 25.0:
+    while lower_height + height_range <= 45.0:
         upper_k = (lower_height + height_range) / voxels.spacing
         lower_k = lower_height / voxels.spacing
         bounds = lacunarity.Bounds(i0=i0, i1=i1, j0=j0, j1=j1, k0=lower_k, k1=upper_k)
